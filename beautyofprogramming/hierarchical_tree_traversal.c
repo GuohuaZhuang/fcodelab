@@ -8,16 +8,6 @@ typedef struct Node {
 	struct Node* rChild;
 } Node;
 
-/// int InsertNode(Node* root, int data) {
-/// 	if (data < 0) {
-/// 	}
-/// }
-/// 
-/// int DestoryTree(Node* root) {
-/// 	Node* p = root;
-/// 	while (p
-/// }
-
 Node* GenerateNewNode(int data) {
 	Node* pNode = (Node*) malloc(sizeof(Node));
 	pNode->data = data;
@@ -26,15 +16,32 @@ Node* GenerateNewNode(int data) {
 	return pNode;
 }
 
+void InsertNode(Node* root, int data, int ldata, int rdata) {
+	if (NULL == root) {
+		return;
+	}
+	if (root->data == data) {
+		if (ldata > 0) root->lChild = GenerateNewNode(ldata);
+		if (rdata > 0) root->rChild = GenerateNewNode(rdata);
+		return;
+	}
+	InsertNode(root->lChild, data, ldata, rdata);
+	InsertNode(root->rChild, data, ldata, rdata);
+}
+
+void DestoryTree(Node* root) {
+	if (NULL == root) return;
+	DestoryTree(root->lChild);
+	DestoryTree(root->rChild);
+	free(root);
+}
+
 Node* GenerateTestTree(void) {
 	Node* root = GenerateNewNode(1);
-	root->lChild = GenerateNewNode(2);
-	root->lChild->lChild = GenerateNewNode(4);
-	root->lChild->rChild = GenerateNewNode(5);
-	root->lChild->rChild->lChild = GenerateNewNode(7);
-	root->lChild->rChild->rChild = GenerateNewNode(8);
-	root->rChild = GenerateNewNode(3);
-	root->rChild->rChild = GenerateNewNode(6);
+	InsertNode(root, 1, 2, 3);
+	InsertNode(root, 2, 4, 5);
+	InsertNode(root, 3, -1, 6);
+	InsertNode(root, 5, 7, 8);
 	return root;
 }
 
@@ -58,11 +65,14 @@ int PrintNodeAllLevel(Node* root) {
 	return 1;
 }
 
-int main(int argc, const char *argv[])
-{
+int main(int argc, const char *argv[]) {
+
 	Node* root = GenerateTestTree();
-	// PrintNodeAtLevel(root, 3);
-	PrintNodeAllLevel(root);
+	
+	PrintNodeAtLevel(root, 3);
+	// PrintNodeAllLevel(root);
 	printf("\n");
+
+	DestoryTree(root);
 	return 0;
 }
