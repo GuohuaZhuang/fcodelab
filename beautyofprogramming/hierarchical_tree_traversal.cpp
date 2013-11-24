@@ -127,25 +127,6 @@ int PrintNodeAtLevel(Node* root, int level) {
 		+ PrintNodeAtLevel(root->rChild, level - 1);
 }
 
-/// int PrintNodeAtLevel_Desc(Node* root, int level) {
-/// 	if (!root || level < 0) {
-/// 		return 0;
-/// 	}
-/// 	if (0 == level) {
-/// 		PrintNodeAtLevel_Desc(root->lChild, level - 1);
-/// 		PrintNodeAtLevel_Desc(root->rChild, level - 1);
-/// 		printf("%d  ", root->data);
-/// 		return 1;
-/// 	}
-/// }
-/// 
-/// void PrintNodeAllLevel_Desc(Node* root) {
-/// 	int level = 0;
-/// 	while (PrintNodeAtLevel_Desc(root, level++) > 0) {
-/// 		printf("\n");
-/// 	}
-/// }
-
 /**
 * @brief Print tree node data at all level from root 0 level.
 *
