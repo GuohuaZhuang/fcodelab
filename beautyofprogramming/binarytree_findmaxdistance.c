@@ -89,16 +89,40 @@ void DestoryTree(Node* root) {
 *      4   5     6
 *         7 8      
 *
+*
+* another tree:
+*              1
+*       2             3
+*   4       5        
+* 9   10  7   8
+* 12      11
+* 
 * @return tree root.
 */
 Node* GenerateTestTree(void) {
 	Node* root = GenerateNewNode(1);
+	// InsertNode(root, 1, 2, 3);
+	// InsertNode(root, 2, 4, 5);
+	// InsertNode(root, 3, -1, 6);
+	// InsertNode(root, 5, 7, 8);
 	InsertNode(root, 1, 2, 3);
 	InsertNode(root, 2, 4, 5);
-	InsertNode(root, 3, -1, 6);
 	InsertNode(root, 5, 7, 8);
+	InsertNode(root, 4, 9, 10);
+	InsertNode(root, 7, 11, -1);
+	InsertNode(root, 9, 12, -1);
 	return root;
 }
+
+/**
+* @brief return note in binary tree max distance and max depth result.
+*/
+typedef struct _RESULT {
+	int nMaxDistance;
+	int nMaxDepth;
+} RESULT;
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 /**
 * @brief Find max edges in the tree.
@@ -107,45 +131,26 @@ Node* GenerateTestTree(void) {
 *
 * @return max edges distance.
 */
-int FindMaxDistance(Node* root) {
-	if (NULL == root) return 0;
-	int dl = 0, dr = 0;
-	if (NULL != root->lChild) {
-		dl ++;
-		dl += FindMaxDistance(root->lChild);
+RESULT FindMaxDistance(Node* root) {
+	if (NULL == root) {
+		RESULT ret = {0, -1};
+		return ret;
 	}
-	if (NULL != root->rChild) {
-		dr ++;
-		dr += FindMaxDistance(root->rChild);
-	}
-	return (dl > dr) ? dl : dr;
-}
-
-/**
-* @brief Calc left and right child tree max edges distance.
-*
-* @param root binary tree root.
-*
-* @return max edges distance.
-*/
-int CalcMaxDistance(Node* root) {
-	if (NULL == root) return 0;
-	int d = 0;
-	if (NULL != root->lChild) {
-		d ++;
-		d += FindMaxDistance(root->lChild);
-	}
-	if (NULL != root->rChild) {
-		d ++;
-		d += FindMaxDistance(root->rChild);
-	}
-	return d;
+	RESULT retl = FindMaxDistance(root->lChild);
+	RESULT retr = FindMaxDistance(root->rChild);
+	int nMaxDepth = MAX(retl.nMaxDepth, retr.nMaxDepth) + 1;
+	int nMaxDistance = MAX(
+		MAX(retl.nMaxDistance, retr.nMaxDistance), 
+		retl.nMaxDepth + retr.nMaxDepth + 2);
+	RESULT ret = {nMaxDistance, nMaxDepth};
+	return ret;
 }
 
 int main(int argc, const char *argv[])
 {
 	Node* root = GenerateTestTree();
-	int nMaxDistance = CalcMaxDistance(root);
+	RESULT ret = FindMaxDistance(root);
+	int nMaxDistance = (ret.nMaxDistance > 0) ? ret.nMaxDistance : 0;
 	printf("Max distance is %d\n", nMaxDistance);
 	DestoryTree(root);
 	return 0;
