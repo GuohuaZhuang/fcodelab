@@ -153,13 +153,48 @@ void Rebuild(const char* pPreOrder,
 	free(leftInOrder), free(rightInOrder);
 	free(leftPreOrder), free(rightPreOrder);
 }
+	
+/**
+* @brief Rebuild binary tree by given preorder and inorder, 2th simple way.
+* the Rebuild2 may is more less resource useage than Rebuild way.
+*
+* @param pPreOrder given preorder.
+* @param pInOrder given inorder.
+* @param nTreeLen given order length.
+* @param pRoot output binary tree root.
+*/
+void Rebuild2(const char* pPreOrder, 
+	const char* pInOrder, 
+	int nTreeLen, Node** pRoot) {
+	if (NULL == pPreOrder 
+		|| NULL == pInOrder
+		|| nTreeLen <= 0) {
+		return;
+	}
+	char curroot = pPreOrder[0];
+	*pRoot = GenerateNewNode(curroot);
+	int i = 0;
+	while (i < nTreeLen && curroot != pInOrder[i]) {
+		i ++;
+	}
+	if (i >= nTreeLen || 0 == i) return;
+	int nLeftLen = i;
+	int nRightLen = nTreeLen - nLeftLen - 1;
+	if (nLeftLen > 0) {
+		Rebuild2(pPreOrder + 1, pInOrder, nLeftLen, &((*pRoot)->lChild));
+	}
+	if (nRightLen > 0) {
+		Rebuild2(pPreOrder + 1 + nLeftLen, pInOrder + nLeftLen + 1, nRightLen, 
+			&((*pRoot)->rChild));
+	}
+}
 
 int main(int argc, const char *argv[]) {
 
 	Node* root = NULL;
 	const char* pPreOrder = "abdcef";
 	const char* pInOrder = "dbaecf";
-	Rebuild(pPreOrder, pInOrder, (int)strlen(pPreOrder), &root);
+	Rebuild2(pPreOrder, pInOrder, (int)strlen(pPreOrder), &root);
 	
 	PrintNodeAllLevel(root);
 	printf("\n");
