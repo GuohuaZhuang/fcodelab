@@ -96,9 +96,9 @@ int PrintNodeAllLevel(Node* root) {
 	return 1;
 }
 
-#define NewCharArray(p, len) \
-	char* p = (char*) malloc(sizeof(char) * len); \
-	memset(p, 0, len);
+#define NewCharArray(p, len)                        \
+	char* p = (char*) malloc(sizeof(char) * len);   \
+	memset(p, 0, len);                              \
 	
 /**
 * @brief Rebuild binary tree by given preorder and inorder.
@@ -189,6 +189,9 @@ void Rebuild2(const char* pPreOrder,
 	}
 }
 
+/**
+* @brief Use for rebuild binary tree without recursive, it store rebuild info.
+*/
 typedef struct _rebuild_info {
 	const char* pPreOrder;
 	const char* pInOrder;
@@ -196,6 +199,39 @@ typedef struct _rebuild_info {
 	Node** pRoot;
 } REBINFO;
 
+/**
+* @brief Set rebuild macro.
+*
+* @param rebinfo REBINFO struct.
+* @param pPreOrderi given preorder.
+* @param pInOrderi given inorder.
+* @param nTreeLeni given order length.
+* @param pRooti output binary tree root.
+*/
+#define REBINFO_SET(rebinfo, pPreOrderi, pInOrderi, nTreeLeni, pRooti) \
+	rebinfo.pPreOrder = pPreOrderi;                                    \
+	rebinfo.pInOrder = pInOrderi;                                      \
+	rebinfo.nTreeLen = nTreeLeni;                                      \
+	rebinfo.pRoot = pRooti;                                            \
+
+#define QUE_PUSH_REBINFO(que, pPreOrderi, pInOrderi, nTreeLeni, pRooti) \
+	REBINFO _rebinfo;                                                   \
+	REBINFO_SET(_rebinfo, pPreOrderi, pInOrderi, nTreeLeni, pRooti);    \
+	que.push(_rebinfo);                                                 \
+
+#include <queue>
+using std::queue;
+
+/**
+* @brief Rebuild binary tree by given preorder and inorder, 2th simple way.
+* the Rebuild2 may is more less resource useage than Rebuild way.
+* And implement it without recursive using queue to store rebuild info state.
+*
+* @param pPreOrder given preorder.
+* @param pInOrder given inorder.
+* @param nTreeLen given order length.
+* @param pRoot output binary tree root.
+*/
 void Rebuild2_WithoutRecursive(const char* pPreOrder, 
 	const char* pInOrder, 
 	int nTreeLen, Node** pRoot) {
@@ -204,21 +240,33 @@ void Rebuild2_WithoutRecursive(const char* pPreOrder,
 		|| nTreeLen <= 0) {
 		return;
 	}
-	char curroot = pPreOrder[0];
-	*pRoot = GenerateNewNode(curroot);
-	int i = 0;
-	while (i < nTreeLen && curroot != pInOrder[i]) {
-		i ++;
-	}
-	if (i >= nTreeLen) return;
-	int nLeftLen = i;
-	int nRightLen = nTreeLen - nLeftLen - 1;
-	if (nLeftLen > 0) {
-		Rebuild2(pPreOrder + 1, pInOrder, nLeftLen, &((*pRoot)->lChild));
-	}
-	if (nRightLen > 0) {
-		Rebuild2(pPreOrder + 1 + nLeftLen, pInOrder + nLeftLen + 1, nRightLen, 
-			&((*pRoot)->rChild));
+	queue<REBINFO> que;
+	QUE_PUSH_REBINFO(que, pPreOrder, pInOrder, nTreeLen, pRoot)
+	while (!que.empty()) {
+		REBINFO rebinfo = que.front(); que.pop();
+		char curroot = rebinfo.pPreOrder[0];
+		*(rebinfo.pRoot) = GenerateNewNode(curroot);
+		int i = 0;
+		while (i < rebinfo.nTreeLen && curroot != rebinfo.pInOrder[i]) {
+			i ++;
+		}
+		if (i >= rebinfo.nTreeLen) return;
+		int nLeftLen = i;
+		int nRightLen = rebinfo.nTreeLen - nLeftLen - 1;
+		if (nLeftLen > 0) {
+			QUE_PUSH_REBINFO(que, 
+				rebinfo.pPreOrder + 1, 
+				rebinfo.pInOrder, 
+				nLeftLen, 
+				&((*(rebinfo.pRoot))->lChild));
+		}
+		if (nRightLen > 0) {
+			QUE_PUSH_REBINFO(que, 
+				rebinfo.pPreOrder + 1 + nLeftLen, 
+				rebinfo.pInOrder + nLeftLen + 1, 
+				nRightLen, 
+				&((*(rebinfo.pRoot))->rChild));
+		}
 	}
 }
 
@@ -226,8 +274,13 @@ int main(int argc, const char *argv[]) {
 
 	Node* root = NULL;
 	const char* pPreOrder = "abdcef";
-	const char* pInOrder = "bdaecf";
-	Rebuild2(pPreOrder, pInOrder, (int)strlen(pPreOrder), &root);
+	const char* pInOrder = "dbaecf";
+	// Rebuild(...);
+	// Rebuild2(...);
+	Rebuild2_WithoutRecursive(pPreOrder, 
+		pInOrder, 
+		(int)strlen(pPreOrder), 
+		&root);
 	
 	PrintNodeAllLevel(root);
 	printf("\n");
