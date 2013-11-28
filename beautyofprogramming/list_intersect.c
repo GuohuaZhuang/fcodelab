@@ -52,6 +52,17 @@ Node* GenerateNewNode(int data) {
 * @brief Judge list whether is circle or not circle.
 * If the list has no circle, then output last node point.
 * If the list has circle, then output entrance node point.
+* 
+* We know when fast equals to slow, assum the start point to entrance 
+* length is l, and the circle circumference is r, assume now length is s, 
+* the have:
+* 		 s = l + hr
+* 		2s = l + nr + hr
+* 	the n is a integer, and h is a float number which is (0 <= h <= 1).
+* 	so eliminate the s, we get: 
+* 		s = nr
+* 		l = nr - hr
+* 		l = (n-1)r - (1-h)r*
 *
 * @param list input list to judge.
 * @param plast output last node point if has no circle.
@@ -87,7 +98,7 @@ int JudgeListCircle(Node* list, Node** plast, Node** pentra, int *plen) {
 		}
 		return 0;
 	}
-	// has circle, and use "a = (n-1)r + (L – a – x)" to find entrance node.
+	// has circle, and use "l = (n-1)r + (1-h)r" to find entrance node.
 	Node* p = list;
 	while (p != fast) {
 		p = p->next;
