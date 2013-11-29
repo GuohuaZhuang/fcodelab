@@ -151,9 +151,10 @@ void find_equal_to_set_pos(int i, int* pj, int len_s, ELE S[], ELE Q[],
 
 /**
 * @brief Find minimum abstract.
-* I call it walk minimum abstract algorithm, contrast as the earthworm minimum
+* I call it walking legs minimum abstract algorithm, contrast as the earthworm minimum
 * abstract algorithm (it implement in the correspond cpp source code, may be 
 * named min_abstract.cpp).
+* It use O(N*M) time complexity.
 *
 * @param S[] scan string word array.
 * @param len_s scan string length.
