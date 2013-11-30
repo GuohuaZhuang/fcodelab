@@ -1,0 +1,130 @@
+===============================================================================
+                              fcodelab code style
+===============================================================================
+
+<General Nameing Rules>
+
+Function names, variable names, and filenames should be descriptive; eschew 
+abbreviation.
+Give as descriptive a name as possible, within reason. Do not worry about 
+saving horizontal space as it is far more important to make your code 
+immediately understandable by a new reader. Do not use abbreviations that are
+ambiguous or unfamilliar to readers outside your project, and do not abbreviate
+by deleting letters within a word.
+	int price_count_reader;
+	int num_errors;
+	int num_dns_connection;
+
+	The Bad names:
+		int n;
+		int nerr;
+		int n_comp_conns;
+		int wgc_connections;
+		int pc_reader;
+		int cstmr_id;
+
+Head files
+	All header files should have #define guards to prevent multiple inclusion.
+	The format of the symbol name should be <PROJECT>_<PATH>_<FILE>_H_.
+	To guarantee uniqueness, they should be based on the full path in a 
+	project's source tree. For example, the file foo/src/bar/baz.h in project 
+	foo should have the following guard:
+		#ifndef FOO_BAR_BAZ_H_
+		#define FOO_BAR_BAZ_H_
+		...
+		#endif // FOO_BAR_BAZ_H_
+
+File Names(can include underscores(_) or dashes(-), prefer "_".
+	C++ files should end in .cc and header files should end in .h
+	Do not use filenames that already exist in /usr/include, such as db.h, 
+	In general, make your filename very specific. For example, use 
+	http_server_logs.h rather than logs.h. A very common case is to have a pair
+	of files called, e.g., foo_bar.h and foo_bar.cc, defining a class called 
+	FooBar.
+		my_useful_class.cc
+		my-useful-class.cc
+		myusefulclass.cc
+		myusefulclass_test.cc
+
+Inline functions(10 lines or less is small define function)
+	If your inline functions are very short, they should go directly into your
+	.h file. However, if your inline functions include a lot of code, they may
+	go into a third file that ends in -inl.h. In a class with a lot of inline 
+	code, your class could have three files:
+		url_table.h
+		url_table.cc
+		url_table-inl.h
+
+Type Names(A capital letter start and every capital letter for each word.)
+	It use in class/struct/typedef/enum
+		MyExcitingClass, MyExcitingEnum.
+	
+Variable Names
+	variable names are all lowercase, with underscores between words. Class 
+	member variables have trailing underscores. but data members in structs 
+	should be named like regular variables without the trailing underscores.
+		string table_name;
+		string tablename;
+		class ...{
+			string table_name_;
+			string tablename_;
+		}
+	!!! I want to add underscores in the front of variables.
+	Global variables consider prefixing it with g_.
+	Constant names google style is add a "k" and then followed by words with
+	uppercase first letters:
+		const int kDaysInAWeek = 7;
+	!!! I want to use all uppercase character to do it. Like this:
+		const int DAYS_IN_AWEEK = 7;
+
+Function names
+	Regular functions have mixed case; accessors and mutators match the name of
+	the variable: MyExcitingFunction(), MyExcitingMethod(), 
+	my_exciting_member_variable(), set_my_exciting_member_variable().
+	If your function crashed upon an error, you should append OrDie to the 
+	function name.
+		AddTableEntry()
+		DeleteUrl()
+		OpenFileOrDie()
+	class MyClass {
+		public:
+			...
+			int num_entries() const { return num_entries; }
+			void set_num_entries(int num_entriess) { 
+					num_entries_ = num_entries;
+			}
+		private:
+			int num_entries_;
+	};
+	!!! I don't like that, I like get_xxx/set_xxx or getXxx/setXxx, and data
+	member names as _xxx;
+
+Namespace names
+	Namespace names are all lower-case, and based on projct names and possible
+	their directory structure: google_awesome_project.
+
+Enumerator names
+	Enumerators should be named either like constants or like macros: either 
+	kEnumName or ENUM_NAME.
+		enum UrlTableErrors {
+			kOK = 0, kErrorOutOfMemory, kErrorMalformedInput,
+		};
+		enum AlternateUrlTableErrors {
+			OK = 0, OUT_OF_MEMORY = 1, MALFORMED_INPUT = 2,
+		}
+	!!! I like set constants, macros, enumerators all use uppercase name, like 
+	OUT_OF_MEMORY.
+
+Macro names
+	Macro should be named with all capital and underscores.
+
+0 and nullptr/NULL
+	Use 0 for integers, 0.0 for reals, nullptr (or NULL) for pointer, and '\0'
+	for chars. For project tha allow C++11 features, use nullptr. For C++03 
+	projects, we prefer NULL because it looks like a pointer.
+	sizeof(NULL) is not equal to sizeof(0) in my 64bit machine.
+	!!! I just use g++ v4.6 in ubuntu situation, but the C++11 only support in 
+	g++ v4.7, dammit! So do not use nullptr now, and also auto.
+
+
+
