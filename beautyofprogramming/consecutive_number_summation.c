@@ -201,11 +201,13 @@ void print_max_consecutive_number_summation_count_use_divide() {
 	int64_t n_max_count = 0;
 	int64_t x = 1;
 	for (x = 1; x < MAX_UINT64_T; x ++) {
-		int64_t count = print_all_consecutive_number_summation_use_divide(x);
+		int64_t count = get_consecutive_number_summation_count_use_divide(x);
 		if (n_max_count < count) {
 			#ifdef PRINT_OUTPUT
-			printf("x = %"PRIdS", (0x%"PRIxS")\n", x, x);
+			printf("x = %"PRIdS", (0x%016"PRIxS"), count = %"PRIdS"\n", 
+				x, x, count);
 			#endif // PRINT_OUTPUT
+			n_max_count = count;
 		}
 	}
 }
