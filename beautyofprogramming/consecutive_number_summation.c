@@ -180,14 +180,45 @@ int print_all_consecutive_number_summation_use_divide(int64_t a) {
 	return n_summation_count;
 }
 
+int get_consecutive_number_summation_count_use_divide(int64_t a) {
+	if (a <= 2) return 0;
+	int64_t n_summation_count = 0;
+	int64_t n_max_count = (int64_t)sqrt((double)a)*2;
+	int64_t n = 0;
+	for (n = 2; n <= n_max_count; n ++) {
+		int64_t mod = (n*(n-1))/2;
+		int64_t minus = a-mod;
+		if (minus <= 0) break;
+		if (minus%n == 0) {
+			// print_consecutive_number_summation(a, (minus/n), 1);
+			n_summation_count ++;
+		}
+	}
+	return n_summation_count;
+}
+
+void print_max_consecutive_number_summation_count_use_divide() {
+	int64_t n_max_count = 0;
+	int64_t x = 1;
+	for (x = 1; x < MAX_UINT64_T; x ++) {
+		int64_t count = print_all_consecutive_number_summation_use_divide(x);
+		if (n_max_count < count) {
+			#ifdef PRINT_OUTPUT
+			printf("x = %"PRIdS", (0x%"PRIxS")\n", x, x);
+			#endif // PRINT_OUTPUT
+		}
+	}
+}
+
 int main(int argc, const char *argv[])
 {
-	int64_t x = 1;
-	for (x = 1; x < 100/*MAX_UINT64_T*/; x ++) {
-		int64_t count = print_all_consecutive_number_summation(x);
-		// int64_t count = print_all_consecutive_number_summation_use_equation(x);
-		// int64_t count = print_all_consecutive_number_summation_use_divide(x);
-		if (0 == count) print_number(x);
-	}
+///	int64_t x = 1;
+///	for (x = 1; x < 1702/*MAX_UINT64_T*/; x ++) {
+///		// int64_t count = print_all_consecutive_number_summation(x);
+///		// int64_t count = print_all_consecutive_number_summation_use_equation(x);
+///		int64_t count = print_all_consecutive_number_summation_use_divide(x);
+///		if (0 == count) print_number(x);
+///	}
+	print_max_consecutive_number_summation_count_use_divide();
 	return 0;
 }
