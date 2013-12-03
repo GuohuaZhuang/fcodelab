@@ -46,8 +46,8 @@
 #define PRIXS __PRIS_PREFIX "X"
 #define PRIoS __PRIS_PREFIX "o"
 
-// #define MAX_UINT64_T (9223372036854775807)
-#define MAX_UINT64_T (0x7fffffffffffffff)
+// #define MAX_INT64_T (9223372036854775807)
+#define MAX_INT64_T (0x7fffffffffffffff)
 
 /**
 * @brief print number in 64bit compatible output.
@@ -200,12 +200,13 @@ int get_consecutive_number_summation_count_use_divide(int64_t a) {
 void print_max_consecutive_number_summation_count_use_divide() {
 	int64_t n_max_count = 0;
 	int64_t x = 1;
-	for (x = 1; x < MAX_UINT64_T; x ++) {
+	for (x = 1; x < MAX_INT64_T; x ++) {
 		int64_t count = get_consecutive_number_summation_count_use_divide(x);
 		if (n_max_count < count) {
 			#ifdef PRINT_OUTPUT
 			printf("x = %"PRIdS", (0x%016"PRIxS"), count = %"PRIdS"\n", 
 				x, x, count);
+			fflush(stdout);
 			#endif // PRINT_OUTPUT
 			n_max_count = count;
 		}
@@ -215,7 +216,7 @@ void print_max_consecutive_number_summation_count_use_divide() {
 int main(int argc, const char *argv[])
 {
 ///	int64_t x = 1;
-///	for (x = 1; x < 1702/*MAX_UINT64_T*/; x ++) {
+///	for (x = 1; x < 1702/*MAX_INT64_T*/; x ++) {
 ///		// int64_t count = print_all_consecutive_number_summation(x);
 ///		// int64_t count = print_all_consecutive_number_summation_use_equation(x);
 ///		int64_t count = print_all_consecutive_number_summation_use_divide(x);
