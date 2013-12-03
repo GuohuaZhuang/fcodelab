@@ -24,7 +24,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include <stdint.h>
 #include <math.h>
 
 #define PRINT_OUTPUT
