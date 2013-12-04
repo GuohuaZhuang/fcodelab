@@ -70,9 +70,11 @@ void print_number(int64_t a) {
 void print_consecutive_number_summation(int64_t a, int64_t n_start_number, 
 	int64_t f_direction) {
 #ifdef PRINT_OUTPUT
+	int64_t a_backup = a;
 	printf("%"PRIdS" = ", a);
 	while (a > 0) {
-		printf("%"PRIdS" + ", n_start_number);
+		if (a != a_backup) printf(" + ");
+		printf("%"PRIdS"", n_start_number);
 		a -= n_start_number;
 		(f_direction == 0) ? (n_start_number --) : (n_start_number ++);
 	}
