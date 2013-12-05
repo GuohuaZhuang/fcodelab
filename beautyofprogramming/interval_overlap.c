@@ -86,7 +86,9 @@ int intervals_merger(INTERVAL* intervals, int len) {
 	int i = 0, j = 0;
 	for (i = 0; i < len-1; i ++) {
 		if (intervals[i].b >= intervals[i+1].a) {
-			intervals[i].b = intervals[i+1].b;
+			if (intervals[i].b < intervals[i+1].b) {
+				intervals[i].b = intervals[i+1].b;
+			}
 			// move forward other intervals.
 			for (j = i+1; j < len-1; j ++) {
 				intervals[j].a = intervals[j+1].a;
