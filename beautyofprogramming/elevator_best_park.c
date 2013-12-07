@@ -31,11 +31,13 @@
 * @param floor_person_number the person number in which floor they want to go.
 * @param floor_length floor_person_number array length.
 * @param pbest_floor_ladder output best floor ladder cost.
+* @param calorie the ladder get up stair to use calorie as more weight to go 
+* down stair.
 *
 * @return best floor park, or return -1 means error occur.
 */
 int elevator_best_park_use_exhaustion(const int* floor_person_number, 
-	const int floor_length, int* pbest_floor_ladder) {
+	const int floor_length, int* pbest_floor_ladder, int calorie) {
 	if (!floor_person_number || floor_length <= 0) {
 		printf("[ERR] -- elevator best park invalid input.\n");
 		return -1;
@@ -45,7 +47,7 @@ int elevator_best_park_use_exhaustion(const int* floor_person_number,
 	for (i = 0; i < floor_length; i ++) { // assume park in the ith floor
 		int current_floor_ladder = 0;
 		for (j = 0; j < i; j ++) {
-			current_floor_ladder += floor_person_number[j] * (i - j);
+			current_floor_ladder += floor_person_number[j] * (i - j) * calorie;
 		}
 		for (j = i + 1; j < floor_length; j ++) {
 			current_floor_ladder += floor_person_number[j] * (j - i);
@@ -55,8 +57,8 @@ int elevator_best_park_use_exhaustion(const int* floor_person_number,
 			min_floor_ladder = current_floor_ladder;
 			best_floor_park = i;
 		}
-		// printf("Now is park %dth floor, it cost %d floor ladder.\n", 
-		// 	i+1, current_floor_ladder);
+		printf("Now is park %dth floor, it cost %d floor ladder.\n", 
+			i+1, current_floor_ladder);
 	}
 	if (min_floor_ladder >= 0 && pbest_floor_ladder) {
 		*pbest_floor_ladder = min_floor_ladder;
@@ -84,11 +86,13 @@ int elevator_best_park_use_exhaustion(const int* floor_person_number,
 * @param floor_person_number the person number in which floor they want to go.
 * @param floor_length floor_person_number array length.
 * @param pbest_floor_ladder output best floor ladder cost.
+* @param calorie the ladder get up stair to use calorie as more weight to go 
+* down stair.
 *
 * @return best floor park, or return -1 means error occur.
 */
 int elevator_best_park_no_exhaustion(const int* floor_person_number, 
-	const int floor_length, int* pbest_floor_ladder) {
+	const int floor_length, int* pbest_floor_ladder, int calorie) {
 	if (!floor_person_number || floor_length <= 0) {
 		printf("[ERR] -- elevator best park invalid input.\n");
 		return -1;
@@ -102,11 +106,11 @@ int elevator_best_park_no_exhaustion(const int* floor_person_number,
 		Y += floor_person_number[i] * (i - 0);
 	}
 	for (i = 1; i < floor_length; i ++) {
-		if (N1 + N2 >= N3) {
+		if (calorie * (N1 + N2) >= N3) {
 			break;
 		}
 		best_floor_park = i;
-		Y += (N1 + N2 - N3);
+		Y += (calorie * (N1 + N2) - N3);
 		N1 += N2;
 		N2 = floor_person_number[i];
 		N3 -= floor_person_number[i];
@@ -123,10 +127,10 @@ int main(int argc, const char *argv[])
 	int best_floor_ladder = -1;
 //	int best_floor_park = elevator_best_park_use_exhaustion(floor_person_number, 
 //		sizeof(floor_person_number)/sizeof(floor_person_number[0]), 
-//		&best_floor_ladder);
+//		&best_floor_ladder, 2);
 	int best_floor_park = elevator_best_park_no_exhaustion(floor_person_number, 
 		sizeof(floor_person_number)/sizeof(floor_person_number[0]), 
-		&best_floor_ladder);
+		&best_floor_ladder, 2);
 	printf("best floor to park is %d, and its ladder cost %d\n", 
 		best_floor_park+1, best_floor_ladder);
 	return 0;
