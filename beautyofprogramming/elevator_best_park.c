@@ -123,6 +123,54 @@ int elevator_best_park_no_exhaustion(const int* floor_person_number,
 	return best_floor_park;
 }
 
+/**
+* @brief use median to calculate the elevator best park floor.
+*
+* @param floor_person_number the person number in which floor they want to go.
+* @param floor_length floor_person_number array length.
+* @param pbest_floor_ladder output best floor ladder cost.
+* @param calorie the ladder get up stair to use calorie as more weight to go 
+* down stair.
+*
+* @return best floor park, or return -1 means error occur.
+*/
+int elevator_best_park_use_median(const int* floor_person_number, 
+	const int floor_length, int* pbest_floor_ladder, int calorie) {
+	if (!floor_person_number || floor_length <= 0) {
+		printf("[ERR] -- elevator best park invalid input.\n");
+		return -1;
+	}
+	int j = 0;
+	int* dup_floor_person_number = (int*) malloc(sizeof(int)*floor_length);
+	for (j = 0; j < floor_length; j ++) {
+		dup_floor_person_number[j] = floor_person_number[j];
+	}
+	int left_index = 0; int right_index = floor_length - 1;
+	dup_floor_person_number[right_index] *= calorie;
+	while (right_index > left_index) {
+		while (dup_floor_person_number[left_index] <= 0 
+			&& right_index > left_index) { left_index ++; }
+		dup_floor_person_number[left_index] --;
+		while (dup_floor_person_number[right_index] <= 0
+			&& right_index > left_index) { right_index --;
+				dup_floor_person_number[right_index] *= calorie; }
+		dup_floor_person_number[right_index] --;
+	}
+	// set best floor ladder cost
+	if (pbest_floor_ladder) {
+		*pbest_floor_ladder = 0;
+		for (j = 0; j < left_index; j ++) {
+			*pbest_floor_ladder += floor_person_number[j] * (left_index-j);
+		}
+		for (j = left_index + 1; j < floor_length; j ++) {
+			*pbest_floor_ladder += 
+				floor_person_number[j] * (j-left_index) * calorie;
+		}
+	}
+	free(dup_floor_person_number);
+	return left_index;
+}
+
 int main(int argc, const char *argv[])
 {
 	int floor_person_number[] = {0, 2, 3, 2, 9, 2, 1, 7, 2, 4, 2};
@@ -130,7 +178,10 @@ int main(int argc, const char *argv[])
 //	int best_floor_park = elevator_best_park_use_exhaustion(floor_person_number, 
 //		sizeof(floor_person_number)/sizeof(floor_person_number[0]), 
 //		&best_floor_ladder, 2);
-	int best_floor_park = elevator_best_park_no_exhaustion(floor_person_number, 
+//	int best_floor_park = elevator_best_park_no_exhaustion(floor_person_number, 
+//		sizeof(floor_person_number)/sizeof(floor_person_number[0]), 
+//		&best_floor_ladder, 2);
+	int best_floor_park = elevator_best_park_use_median(floor_person_number, 
 		sizeof(floor_person_number)/sizeof(floor_person_number[0]), 
 		&best_floor_ladder, 2);
 	printf("best floor to park is %d, and its ladder cost %d\n", 
