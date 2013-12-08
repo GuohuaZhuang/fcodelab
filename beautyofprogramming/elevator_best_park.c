@@ -47,10 +47,10 @@ int elevator_best_park_use_exhaustion(const int* floor_person_number,
 	for (i = 0; i < floor_length; i ++) { // assume park in the ith floor
 		int current_floor_ladder = 0;
 		for (j = 0; j < i; j ++) {
-			current_floor_ladder += floor_person_number[j] * (i - j) * calorie;
+			current_floor_ladder += floor_person_number[j] * (i - j);
 		}
 		for (j = i + 1; j < floor_length; j ++) {
-			current_floor_ladder += floor_person_number[j] * (j - i);
+			current_floor_ladder += floor_person_number[j] * (j - i) * calorie;
 		}
 		if (-1 == min_floor_ladder 
 			|| current_floor_ladder < min_floor_ladder) {
@@ -74,8 +74,10 @@ int elevator_best_park_use_exhaustion(const int* floor_person_number,
 * floor will cost the floor ladders.
 * So, if move to (x+1)th floor, then the floor ladder cost will be change to:
 * 	Y + N1 + N2 - N3   ==>   Y + (N1 + N2 - N3)
+* if think about calorie, then Y + (N1 + N2 - calorie*N3)
 * and if move to (x-1)th floor, the the floor ladder cost will be change to:
 * 	Y - N1 + N2 + N3   ==>   Y - (N1 - N2 - N3)
+* if think about calorie, then Y - (N1 - calorie*N2 - calorie*N3)
 * So, if (N1 + N2 - N3) < 0, it means (x+1)th floor is better than xth floor.
 * And if (N1 - N2 - N3) > 0, it means (x-1)th fllor is better than xth floor.
 * We know the beginning floor begin from 1, there maybe (N1 + N2 - N3) < 0, 
@@ -103,14 +105,14 @@ int elevator_best_park_no_exhaustion(const int* floor_person_number,
 	int i = 0;
 	for (N2 = floor_person_number[0], i = 1; i < floor_length; i ++) {
 		N3 += floor_person_number[i];
-		Y += floor_person_number[i] * (i - 0);
+		Y += floor_person_number[i] * (i - 0) * calorie;
 	}
 	for (i = 1; i < floor_length; i ++) {
-		if (calorie * (N1 + N2) >= N3) {
+		if ((N1 + N2) >= (calorie * N3)) {
 			break;
 		}
 		best_floor_park = i;
-		Y += (calorie * (N1 + N2) - N3);
+		Y += ((N1 + N2) - (calorie * N3));
 		N1 += N2;
 		N2 = floor_person_number[i];
 		N3 -= floor_person_number[i];
