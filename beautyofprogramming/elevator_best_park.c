@@ -24,6 +24,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 /**
 * @brief elevator best park floor use exhaustion to calculate it.
@@ -171,6 +172,55 @@ int elevator_best_park_use_median(const int* floor_person_number,
 	return left_index;
 }
 
+/**
+* @brief use balance method to calculate it, like shoulder pole, the left 
+* weight and the right weight are balance. It is a middle weight if has no 
+* calorie, if has the calorie then mulitiplied by the calorie weight in the 
+* right weight.
+*
+* @param floor_person_number the person number in which floor they want to go.
+* @param floor_length floor_person_number array length.
+* @param pbest_floor_ladder output best floor ladder cost.
+* @param calorie the ladder get up stair to use calorie as more weight to go 
+* down stair.
+*
+* @return best floor park, or return -1 means error occur.
+*/
+int elevator_best_park_use_balance(const int* floor_person_number, 
+	const int floor_length, int* pbest_floor_ladder, int calorie) {
+	if (!floor_person_number || floor_length <= 0) {
+		printf("[ERR] -- elevator best park invalid input.\n");
+		return -1;
+	}
+	int best_floor_park = 0;
+	int i = 0, j = 0;
+	int total_person_number = 0;
+	for (i = 0; i < floor_length; i ++) {
+		total_person_number += floor_person_number[i];
+	}
+	int left_number = 0, right_number = total_person_number * calorie;
+	for (i = 0; i < floor_length; i ++) {
+		left_number += floor_person_number[i];
+		right_number -= floor_person_number[i] * calorie;
+		if (left_number >= right_number) {
+			best_floor_park = i;
+			break;
+		}
+	}
+	// set best floor ladder cost
+	if (pbest_floor_ladder) {
+		*pbest_floor_ladder = 0;
+		for (j = 0; j < best_floor_park; j ++) {
+			*pbest_floor_ladder += floor_person_number[j] * (best_floor_park-j);
+		}
+		for (j = best_floor_park + 1; j < floor_length; j ++) {
+			*pbest_floor_ladder += 
+				floor_person_number[j] * (j-best_floor_park) * calorie;
+		}
+	}
+	return best_floor_park;
+}
+
 int main(int argc, const char *argv[])
 {
 	int floor_person_number[] = {0, 2, 3, 2, 9, 2, 1, 7, 2, 4, 2};
@@ -181,7 +231,10 @@ int main(int argc, const char *argv[])
 //	int best_floor_park = elevator_best_park_no_exhaustion(floor_person_number, 
 //		sizeof(floor_person_number)/sizeof(floor_person_number[0]), 
 //		&best_floor_ladder, 2);
-	int best_floor_park = elevator_best_park_use_median(floor_person_number, 
+//	int best_floor_park = elevator_best_park_use_median(floor_person_number, 
+//		sizeof(floor_person_number)/sizeof(floor_person_number[0]), 
+//		&best_floor_ladder, 2);
+	int best_floor_park = elevator_best_park_use_balance(floor_person_number, 
 		sizeof(floor_person_number)/sizeof(floor_person_number[0]), 
 		&best_floor_ladder, 2);
 	printf("best floor to park is %d, and its ladder cost %d\n", 
