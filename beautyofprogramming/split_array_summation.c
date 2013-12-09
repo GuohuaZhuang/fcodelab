@@ -102,9 +102,14 @@ int* split_array_summation(const int* array, const int length) {
 * @param length array length.
 * @param split split result with bag 0 and 1.
 */
-void print_result(const int* array, const length, const int* split) {
+void print_result(const int* array, const int length, const int* split) {
 	int i = 0, j = 0;
-	printf("splited array are:\n\t");
+	printf("original array is:\n\t");
+	for (i = 0; i < length; i ++) {
+		if (0 != i) printf(", ");
+		printf("%d", array[i]);
+	}
+	printf("\nsplited array are:\n\t");
 	for (j = 0, i = 0; i < length; i ++) {
 		if (0 == split[i]) continue;
 		if (0 != j ++) printf(", ");
