@@ -33,23 +33,15 @@
 * @param array 2*n array.
 * @param length array length.
 * @param bag bag 0 and 1.
-* @param half_sum half summation.
-* @param half_length half length.
 *
 * @return the summation.
 */
-int calculate_summation(const int* array, const int length, const int* bag, 
-	const int half_sum, const int half_length) {
+int get_summation(const int* array, const int length, const int* bag) {
 	int i = 0, sum = 0;
-	int split_length = 0;
 	for (i = 0; i < length; i ++) {
 		if (1 == bag[i]) {
 			sum += array[i];
-			split_length ++;
 		}
-	}
-	if (split_length != half_length || sum > half_sum) {
-		return INT32_MIN;
 	}
 	return sum;
 }
@@ -75,18 +67,19 @@ int* split_array_summation(const int* array, const int length) {
 		half_sum += array[i];
 	}
 	half_sum /= 2;
-	int max_sum = INT32_MIN;
+	int max_sum = INT32_MIN, half_count = 0;
 	while (1) {
-		int sum = calculate_summation(array, length, bag, half_sum, 
-			half_length);
-		if (sum > max_sum) {
-			max_sum = sum;
-			memcpy(split, bag, sizeof(int) * length);
+		if (half_count == half_length) {
+			int sum = get_summation(array, length, bag);
+			if (sum <= half_sum && sum > max_sum) {
+				max_sum = sum;
+				memcpy(split, bag, sizeof(int) * length);
+			}
 		}
 		int k = length - 1;
 		while (k >= 0) {
-			if (0 == bag[k]) { bag[k] = 1; break; }
-			bag[k] = 0; k --;
+			if (0 == bag[k]) { bag[k] = 1; half_count ++; break; }
+			bag[k] = 0; half_count --; k --;
 		}
 		if (k < 0) break;
 	}
@@ -129,7 +122,9 @@ int main(int argc, const char *argv[])
 	int array[] = {1, 5, 7, 8, 9, 6, 3, 11, 20, 17};
 	int length = sizeof(array) / sizeof(array[0]);
 	int* split = split_array_summation(array, length);
-	print_result(array, length, split);
-	free(split);
+	if (split) {
+		print_result(array, length, split);
+		free(split);
+	}
 	return 0;
 }
