@@ -27,6 +27,41 @@
 #include <string.h>
 
 /**
+* @brief print selected.
+*
+* @param array array.
+* @param length array length.
+* @param selected found number's index array, 1 is selected, 0 is not selected.
+*/
+void print_selected(const int* array, const int length, const int* selected) {
+	int i = 0;
+	printf("find selected element is: \n");
+	for (i = 0; i < length; i ++) {
+		if (0 == selected[i]) continue;
+		printf("\tarray[%d] = %d\n", i, array[i]);
+	}
+}
+
+/**
+* @brief calculate summation with given the bag 0 and 1.
+*
+* @param array 2*n array.
+* @param length array length.
+* @param bag bag 0 and 1.
+*
+* @return the summation.
+*/
+int get_summation(const int* array, const int length, const int* bag) {
+	int i = 0, sum = 0;
+	for (i = 0; i < length; i ++) {
+		if (1 == bag[i]) {
+			sum += array[i];
+		}
+	}
+	return sum;
+}
+
+/**
 * @brief sort array ascending use bubble algorithm.
 *
 * @param array array to sort.
@@ -119,8 +154,16 @@ int* fast_find_two_summation_number(const int* array, const int length,
 	return selected;
 }
 
-void print_selected(const int* array, const int length, const int* selected);
-
+/**
+* @brief fast to find three summation number as the given summation.
+*
+* @param array array.
+* @param length array length.
+* @param summation three number's given summation.
+*
+* @return the number found index as a selected array point. You should release 
+* it outside.
+*/
 int* fast_find_three_summation_number(const int* array, const int length, 
 	const int summation) {
 	if (!array || length <= 0) {
@@ -150,27 +193,129 @@ int* fast_find_three_summation_number(const int* array, const int length,
 }
 
 /**
-* @brief print selected.
+* @brief fast find any closest summation number.
+* It is means to find any sub-set in the array which its summation is closest 
+* to the given summation. It is a nondeterministic polynomial time.
 *
 * @param array array.
 * @param length array length.
-* @param selected found number's index array, 1 is selected, 0 is not selected.
+* @param summation given summation.
+*
+* @return the number found index as a selected array point. You should release 
+* it outside.
 */
-void print_selected(const int* array, const int length, const int* selected) {
-	int i = 0;
-	printf("find selected element is: \n");
-	for (i = 0; i < length; i ++) {
-		if (0 == selected[i]) continue;
-		printf("\tarray[%d] = %d\n", i, array[i]);
+int* fast_find_any_closest_summation_number(const int* array, const int length, 
+	const int summation) {
+	if (!array || length <= 0) {
+		printf("fast_find_need_numbers input invalid!\n");
+		return NULL;
 	}
+	int* selected = (int*) malloc(sizeof(int) * length);
+	memset(selected, 0, sizeof(int) * length);
+	int* closest_selected = (int*) malloc(sizeof(int) * length);
+	memset(closest_selected, 0, sizeof(int) * length);
+	int k = 0, closest_sum = 0, current_sum = 0;
+	while (1) {
+		current_sum = get_summation(array, length, selected);
+		if (current_sum <= summation && current_sum > closest_sum) {
+			closest_sum = current_sum;
+			memcpy(closest_selected, selected, sizeof(int) * length);
+		}
+		k = length - 1;
+		while (k >= 0) {
+			if (selected[k] == 0) { selected[k] = 1; break; }
+			selected[k] = 0; k --;
+		}
+		if (k < 0) break;
+	}
+	free(selected);
+	return closest_selected;
+}
+
+/**
+* @brief get a summation split by given summation.
+*
+* @param array array.
+* @param length array length.
+* @param summation given summation.
+*
+* @return split bag array.
+*/
+int* get_summation_selected(const int* array, const int length, int summation) {
+	int* selected = (int*) malloc(sizeof(int) * length);
+	memset(selected, 0, sizeof(int) * length);
+	int k = 0;
+	while (1) {
+		if (summation == get_summation(array, length, selected)) {
+			break;
+		}
+		k = length - 1;
+		while (k >= 0) {
+			if (selected[k] == 0) {
+				selected[k] = 1; break;
+			}
+			selected[k] = 0; k --;
+		}
+		if (k < 0) break;
+	}
+	return selected;
+}
+
+/**
+* @brief fast find any closest summation use storage method which is N^3 times.
+* It must assume all element in the array is positive number.
+* It use more important that summation is smail, it the summation is a big 
+* number, then we advice not use it.
+*
+* @param array array.
+* @param length array length.
+* @param summation the given summation.
+*
+* @return the number found index as a selected array point. You should release 
+* it outside.
+*/
+int* fast_find_any_closest_summation_number_use_N3_times(
+	const int* array, const int length, const int summation) {
+	if (!array || length <= 0) {
+		printf("fast_find_any_closest_summation_number input invalid!\n");
+		return NULL;
+	}
+	int i = 0, j = 0, k = 0, closest_sum = 0;
+	int** N = (int**) malloc(sizeof(int*) * (summation+1));
+	for (i = 0; i < (summation+1); i ++) {
+		N[i] = (int*) malloc(sizeof(int) * (summation+1));
+		memset(N[i], 0, sizeof(int) * (summation+1));
+	}
+	N[0][0] = 1;
+	for (i = 0; i < length; i ++) {
+		j = (i < summation ? i+1 : summation);
+		for (; j > 0; j --) {
+			for (k = 1; k <= summation; k ++) {
+				if (k >= array[i] && N[j-1][k-array[i]] == 1) {
+					N[j][k] = 1;
+				}
+			}
+		}
+	}
+	for (k = summation; k > 0; k --) {
+		for (j = summation; j > 0; j --) {
+			if (N[j][k] == 1) { closest_sum = k; break; }
+		}
+		if (N[j][k] == 1) break;
+	}
+	for (i = 0; i < (summation+1); i ++) { free(N[i]); } free(N);
+	return get_summation_selected(array, length, closest_sum);
 }
 
 int main(int argc, const char *argv[])
 {
 	int array[] = {5, 6, 1, 4, 7, 9, 8};
 	int length = sizeof(array) / sizeof(array[0]);
-	// int* selected = fast_find_two_summation_number(array, length, 10, 0);
-	int* selected = fast_find_three_summation_number(array, length, 10);
+	//int* selected = fast_find_two_summation_number(array, length, 10, 0);
+	//int* selected = fast_find_three_summation_number(array, length, 10);
+	//int* selected = fast_find_any_closest_summation_number(array, length, 10);
+	int* selected = fast_find_any_closest_summation_number_use_N3_times(
+		array, length, 10);
 	print_selected(array, length, selected);
 	free(selected);
 	return 0;
