@@ -149,6 +149,10 @@ int interval_overlap_judgment(INTERVAL* intervals, int len,
 	if (!intervals_varify(intervals, len)) {
 		return -1;
 	}
+	if (!intervals_varify(&oneinterval, 1)) {
+		return -1;
+	}
+
 	// order Intervals
 	intervals_order(intervals, len);
 	
@@ -398,8 +402,8 @@ int interval_overlap_judgment_use_intervaltree(INTERVAL* intervals, int len,
 
 int main(int argc, const char *argv[])
 {
-	INTERVAL intervals[] = {{2, 3}, /*{2, 2}, */{3, 9}, {2, 6}};
-	INTERVAL oneinterval = {7, 6};
+	INTERVAL intervals[] = {{2, 3}, {1, 2}, {3, 9}, {2, 6}};
+	INTERVAL oneinterval = {1, 6};
 	// printf("interval overlap judgment return %d\n", 
 	// 	interval_overlap_judgment(intervals, 
 	// 		sizeof(intervals)/sizeof(intervals[0]), oneinterval) );
