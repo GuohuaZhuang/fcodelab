@@ -86,6 +86,51 @@ int subarray_maximum_summation_partition(const int* array, const int length) {
 	return max_sum;
 }
 
+int max(int a, int b) { return (a > b ? a : b); }
+
+/**
+* @brief get array maximum summation in its sub arrays.
+* This function is use dynamic programming to solve it.
+* Look array[0], we know there are 3 situations here. If the best maximum 
+* summation is array[i] to array[j], then:
+* 	0 = i = j, it means the maximum element summation is just from array[0];
+* 	0 = i < j, it means the maximum summation is start from array[0].
+* 	0 < i, it means the maximum summation is exclude array[0].
+* so, if we start from the end of array, assume the start array is begin from 
+* array element, like start[k] means the maximum summation from array[k].
+* And assume the best array is the maximum summation from the 
+* array[k]~array[n-1], which n is the length of array. So we can start like:
+*   start[n-1] = array[n-1]
+*   best[n-1] = array[n-1]
+* then, start[n-2] = max(array[n-2], array[n-2]+start[n-1]);
+* and best[n-2] = max(start[n-2], best[n-1]);
+* and so on..., util to the 0th element. then we found the best[0] is the total
+* maximum summation in the array we want.
+*
+* @param array array.
+* @param length array length.
+*
+* @return return maximum summation, or return INT32_MIN means error occur.
+*/
+int subarray_maximum_summation_dynamicprogramming(
+	const int* array, const int length) {
+	if (!array || length <= 0) {
+		printf("[ERR] -- subarray_maximum_summation input invalid!\n");
+		return INT32_MIN;
+	}
+	int i = 0, max_sum = INT32_MIN;
+	int* start = (int*) malloc(sizeof(int) * length);
+	int* best = (int*) malloc(sizeof(int) * length);
+	best[length - 1] = start[length - 1] = array[length - 1];
+	for (i = length - 2; i >= 0; i --) {
+		start[i] = max(array[i], array[i]+start[i+1]);
+		best[i] = max(start[i], best[i+1]);
+	}
+	max_sum = best[0];
+	free(start); free(best);
+	return max_sum;
+}
+
 int main(int argc, const char *argv[])
 {
 	const int array[] = 
@@ -95,7 +140,9 @@ int main(int argc, const char *argv[])
 		// {-9, -2, -3, -5, -3}; // result is -2
 	const int length = sizeof(array) / sizeof(array[0]);
 	// int max_summation = subarray_maximum_summation(array, length);
-	int max_summation = subarray_maximum_summation_partition(array, length);
+	// int max_summation = subarray_maximum_summation_partition(array, length);
+	int max_summation = subarray_maximum_summation_dynamicprogramming(
+		array, length);
 	printf("max_summation = %d\n", max_summation);
 	return 0;
 }
