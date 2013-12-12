@@ -131,6 +131,30 @@ int subarray_maximum_summation_dynamicprogramming(
 	return max_sum;
 }
 
+/**
+* @brief get array maximum summation in its sub arrays.
+* Use dynamic programming as the same of the above method, it optimize the 
+* memory to hot use any heap memory.
+*
+* @param array array.
+* @param length array length.
+*
+* @return return maximum summation, or return INT32_MIN means error occur.
+*/
+int subarray_maximum_summation_dynamicprogramming_optimizememory(
+	const int* array, const int length) {
+	if (!array || length <= 0) {
+		printf("[ERR] -- subarray_maximum_summation input invalid!\n");
+		return INT32_MIN;
+	}
+	int i = 0, max_sum = array[length - 1], max_start = array[length - 1];
+	for (i = length - 2; i >= 0; i --) {
+		max_start = max(array[i], array[i]+max_start);
+		max_sum = max(max_start, max_sum);
+	}
+	return max_sum;
+}
+
 int main(int argc, const char *argv[])
 {
 	const int array[] = 
@@ -141,8 +165,11 @@ int main(int argc, const char *argv[])
 	const int length = sizeof(array) / sizeof(array[0]);
 	// int max_summation = subarray_maximum_summation(array, length);
 	// int max_summation = subarray_maximum_summation_partition(array, length);
-	int max_summation = subarray_maximum_summation_dynamicprogramming(
-		array, length);
+	// int max_summation = subarray_maximum_summation_dynamicprogramming(
+	// 	array, length);
+	int max_summation = 
+		subarray_maximum_summation_dynamicprogramming_optimizememory(
+			array, length);
 	printf("max_summation = %d\n", max_summation);
 	return 0;
 }
