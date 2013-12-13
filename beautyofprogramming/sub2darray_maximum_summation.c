@@ -52,7 +52,7 @@ int array_sum(const int A[][7], int i_min, int i_max, int j_min, int j_max) {
 /**
 * @brief bet maximum summation in the sub2array.
 * To get the ith line and mth column is A[i][j].
-* It take O(n*m*sum) time complex.
+* It take O(n^2*m^2*sum) time complexity.
 *
 * @param A 2-dimensional array.
 * @param n 2-dimensional array line count.
@@ -79,7 +79,7 @@ int sub2array_maximum_summation(const int A[][7], const int n, const int m) {
 /**
 * @brief bet maximum summation in the sub2array.
 * To get the ith line and mth column is A[i][j].
-* It take O(n*m) time complex, like dynamic programming.
+* It take O(n^2*m^2) time complexity, like dynamic programming.
 *
 * @param A 2-dimensional array.
 * @param n 2-dimensional array line count.
@@ -117,6 +117,64 @@ int sub2array_maximum_summation_dp(const int A[][7], const int n, const int m) {
 	return max_sum;
 }
 
+/**
+* @brief get part summation from line: i_min to i_max, and the column is m.
+* This function use for sub2array_maximum_summation_dp_optimize.
+*
+* @param PS part-summation array.
+* @param i_min i_min.
+* @param i_max i_max.
+* @param m column position.
+*
+* @return return the give column line summation.
+*/
+int BC(int** PS, int i_min, int i_max, int m) {
+	return (PS[i_max+1][m+1] - PS[i_max+1][m] - PS[i_min][m+1] + PS[i_min][m]);
+}
+
+/**
+* @brief bet maximum summation in the sub2array.
+* To get the ith line and mth column is A[i][j].
+* It take O(n^2*m) time complexity, like dynamic programming.
+*
+* @param A 2-dimensional array.
+* @param n 2-dimensional array line count.
+* @param m 2-dimensional array column count.
+*
+* @return return maximum summation, or return INT32_MIN means error occur.
+*/
+int sub2array_maximum_summation_dp_optimize(
+	const int A[][7], const int n, const int m) {
+	// init boundary and part-summation array.
+	int i = 0, j = 0;
+	int** PS = (int**) malloc(sizeof(int*) * (n+1));
+	for (i = 0; i <= n; i ++) { PS[i] = (int*) malloc(sizeof(int) * (m+1));
+		PS[i][0] = 0; }
+	for (j = 0; j <= m; j ++) { PS[0][j] = 0; }
+	for (i = 1; i <= n; i ++) {
+		for (j = 1; j <= m; j ++) {
+			PS[i][j] = PS[i-1][j] + PS[i][j-1] - PS[i-1][j-1] + A[i-1][j-1];
+		}
+	}
+	// use exhaustion method to find maximum summation.
+	int max_sum = INT32_MIN, start = 0, best = 0;
+	int i_min = 0, i_max = 0;
+	for (i_min = 0; i_min < n; i_min ++) {
+		for (i_max = i_min; i_max < n; i_max ++) {
+			start = BC(PS, i_min, i_max, m-1);
+			best = start;
+			for (i = m-2; i >= 0; i --) {
+				if (start < 0) { start = 0; }
+				start += BC(PS, i_min, i_max, i);
+				if (start > best) { best = start; }
+				if (best > max_sum) { max_sum = best; }
+			}
+		}
+	}
+	for (i = 0; i <= n; i ++) { free(PS[i]); } free(PS);
+	return max_sum;
+}
+
 int main(int argc, const char *argv[])
 {
 	const int A[][7] = {
@@ -128,7 +186,8 @@ int main(int argc, const char *argv[])
 	const int n = sizeof(A) / sizeof(A[0]);
 	const int m = sizeof(A[0]) / sizeof(A[0][0]);
 	// int max_sum = sub2array_maximum_summation(A, n, m);
-	int max_sum = sub2array_maximum_summation_dp(A, n, m);
+	// int max_sum = sub2array_maximum_summation_dp(A, n, m);
+	int max_sum = sub2array_maximum_summation_dp_optimize(A, n, m);
 	printf("max_sum = %d\n", max_sum);
 	return 0;
 }
