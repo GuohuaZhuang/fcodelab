@@ -155,6 +155,82 @@ int subarray_maximum_summation_dynamicprogramming_optimizememory(
 	return max_sum;
 }
 
+/**
+* @brief get array maximum summation in its sub arrays.
+* Use dynamic programming as the same of the above method, it optimize the 
+* memory to hot use any heap memory.
+* And this is another write, not use max function, just decide the max_start
+* and max_sum, and we know the negative can not help to the max_start.
+*
+* @param array array.
+* @param length array length.
+*
+* @return return maximum summation, or return INT32_MIN means error occur.
+*/
+int subarray_maximum_summation_dp_om_another_write(
+	const int* array, const int length) {
+	if (!array || length <= 0) {
+		printf("[ERR] -- subarray_maximum_summation input invalid!\n");
+		return INT32_MIN;
+	}
+	int i = 0, max_sum = array[length - 1], max_start = array[length - 1];
+	for (i = length - 2; i >= 0; i --) {
+		if (max_start < 0) { max_start = 0; }
+		max_start += array[i];
+		if (max_start > max_sum) { max_sum = max_start; }
+	}
+	return max_sum;
+}
+
+int subarray_minimum_summation_dp_om(
+	const int* array, const int length) {
+	if (!array || length <= 0) {
+		printf("[ERR] -- subarray_maximum_summation input invalid!\n");
+		return INT32_MIN;
+	}
+	int i = 0, min_sum = array[length - 1], min_start = array[length - 1];
+	for (i = length - 2; i >= 0; i --) {
+		if (min_start > 0) { min_start = 0; }
+		min_start += array[i];
+		if (min_start < min_sum) { min_sum = min_start; }
+	}
+	return min_sum;
+}
+
+/**
+* @brief get circle array maximum summation in its sub arrays.
+* The circle means array[n-1] is the upper element of array[0], it is a circle.
+* This function implement use three situations:
+* 1. the best pieces of maximum is just not across the array[n-1] and array[0].
+* 2. the best pieces of maximum is the whole array from 0 to n-1.
+* 3. the best pieces of maximum is across the array[n-1] to array[0], then we 
+* just found the inverse problem: find the negative summation and is a minimum 
+* pieces in the array[0] to array[n-1] then we got it.
+*
+* @param array array.
+* @param length array length.
+*
+* @return return maximum summation, or return INT32_MIN means error occur.
+*/
+int subarray_maximum_summation_circle(const int* array, const int length) {
+	if (!array || length <= 0) {
+		printf("[ERR] -- subarray_maximum_summation input invalid!\n");
+		return INT32_MIN;
+	}
+	int i = 0, array_sum = 0, max_sum = INT32_MIN;
+	for (i = 0; i < length; i ++) {
+		array_sum += array[i];
+	}
+	max_sum = (array_sum > max_sum ? array_sum : max_sum);
+	int max_sum_nocircle = subarray_maximum_summation_dp_om_another_write(
+		array, length);
+	max_sum = (max_sum_nocircle > max_sum ? max_sum_nocircle : max_sum);
+	int min_sum_nocircle = subarray_minimum_summation_dp_om(array, length);
+	if (min_sum_nocircle < 0) max_sum = ((array_sum-min_sum_nocircle) > max_sum
+		? (array_sum-min_sum_nocircle) : max_sum);
+	return max_sum;
+}
+
 int main(int argc, const char *argv[])
 {
 	const int array[] = 
@@ -167,9 +243,12 @@ int main(int argc, const char *argv[])
 	// int max_summation = subarray_maximum_summation_partition(array, length);
 	// int max_summation = subarray_maximum_summation_dynamicprogramming(
 	// 	array, length);
-	int max_summation = 
-		subarray_maximum_summation_dynamicprogramming_optimizememory(
-			array, length);
+	// int max_summation = 
+	// 	subarray_maximum_summation_dynamicprogramming_optimizememory(
+	// 		array, length);
+	// int max_summation = subarray_maximum_summation_dp_om_another_write(
+	// 	array, length);
+	int max_summation = subarray_maximum_summation_circle(array, length);
 	printf("max_summation = %d\n", max_summation);
 	return 0;
 }
