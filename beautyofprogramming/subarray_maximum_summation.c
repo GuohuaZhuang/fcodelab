@@ -182,11 +182,19 @@ int subarray_maximum_summation_dp_om_another_write(
 	return max_sum;
 }
 
+/**
+* @brief get minimum summation use dynamic programming and optimized.
+*
+* @param array array.
+* @param length array length.
+*
+* @return return minimum summation, or return INT32_MAX means error occur.
+*/
 int subarray_minimum_summation_dp_om(
 	const int* array, const int length) {
 	if (!array || length <= 0) {
 		printf("[ERR] -- subarray_maximum_summation input invalid!\n");
-		return INT32_MIN;
+		return INT32_MAX;
 	}
 	int i = 0, min_sum = array[length - 1], min_start = array[length - 1];
 	for (i = length - 2; i >= 0; i --) {
@@ -231,6 +239,38 @@ int subarray_maximum_summation_circle(const int* array, const int length) {
 	return max_sum;
 }
 
+/**
+* @brief get array's maximum summation sub array and its position.
+*
+* @param array array.
+* @param length array length.
+* @param pstart the sub array start position.
+* @param pcount the sub array count.
+*
+* @return return maximum summation, or return INT32_MIN means error occur.
+*/
+int subarray_maximum_summation_and_position(
+	const int* array, const int length, int* pstart, int* pcount) {
+	if (!array || length <= 0) {
+		printf("[ERR] -- subarray_maximum_summation input invalid!\n");
+		return INT32_MIN;
+	}
+	int i = 0, max_sum = array[length - 1], max_start = array[length - 1];
+	int start_end = length - 1, start_count = 1;
+	int sum_end = -1, sum_count = 0;
+	for (i = length - 2; i >= 0; i --) {
+		if (max_start < 0) { max_start = 0; start_end = i; start_count = 0; }
+		max_start += array[i]; start_count ++;
+		if (max_start > max_sum) {
+			max_sum = max_start;
+			sum_end = start_end; sum_count = start_count;
+		}
+	}
+	if (pstart) *pstart = sum_end - sum_count + 1;
+	if (pcount) *pcount = sum_count;
+	return max_sum;
+}
+
 int main(int argc, const char *argv[])
 {
 	const int array[] = 
@@ -248,7 +288,13 @@ int main(int argc, const char *argv[])
 	// 		array, length);
 	// int max_summation = subarray_maximum_summation_dp_om_another_write(
 	// 	array, length);
-	int max_summation = subarray_maximum_summation_circle(array, length);
+	// int max_summation = subarray_maximum_summation_circle(array, length);
+	int sub_start = -1, sub_count = 0;
+	int max_summation = subarray_maximum_summation_and_position(
+		array, length, &sub_start, &sub_count);
 	printf("max_summation = %d\n", max_summation);
+	if (sub_start >= 0 && sub_count > 0) {
+		printf("sub_start = %d, sub_count = %d\n", sub_start, sub_count);
+	}
 	return 0;
 }
