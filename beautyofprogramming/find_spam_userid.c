@@ -53,6 +53,44 @@ int find_morethan_half_id(const int* ids, const int len) {
 }
 
 /**
+* @brief find exactly half count id from given id list.
+* if exactly half, then we save last two candidate must include it, and it's 
+* count must more than another candidate. because there is other two element 
+* which are not equal to eliminate each other, like {0, 1, 2, 1} which 0 and 2 
+* and eliminate, and remain just 1 one count. Otherwise, if not eliminate, 
+* then it like this {0, 1, 0, 1}, we can get 0 or 1 to ouput as result all is 
+* the right result.
+*
+* @param ids id list, actually it is an array.
+* @param len ids length.
+*
+* @return more than half count id, otherwise return INT32_MIN means error occur.
+*/
+int find_exactly_half_id(const int* ids, const int len) {
+	if (!ids || len <= 0) {
+		printf("[ERR] -- find_morethan_halfcount_id input invalid!\n");
+		return INT32_MIN;
+	}
+	int i = 0, j = 0, candidate[2] = {INT32_MIN}, candidate_count[2] = {0};
+	for (i = 0; i < len; i ++) {
+		for (j = 0; j < 2; j ++) {
+			if (candidate_count[j] > 0 && ids[i] == candidate[j]) {
+				candidate_count[j] ++; break;
+			}
+		}
+		if (j < 2) continue;
+		for (j = 0; j < 2; j ++) {
+			if (0 == candidate_count[j]) {
+				candidate_count[j] = 1; candidate[j] = ids[i]; break;
+			}
+		}
+		if (j >= 2) for (j = 0; j < 2; j ++) { candidate_count[j] --; }
+	}
+	return (candidate_count[0] > candidate_count[1] 
+		? candidate[0] : candidate[1]);
+}
+
+/**
 * @brief find more than half count id from given id list.
 *
 * @param ids id list, actually it is an array.
@@ -90,8 +128,8 @@ int main(int argc, const char *argv[])
 	// find more than half count user id test case.
 	const int ids[] = {2, 2, 2, 1, 1};
 	const int len = sizeof(ids) / sizeof(ids[0]);
-	int mf_id = find_morethan_half_id(ids, len);
-	printf("more than half count id = %d\n", mf_id);
+	int mh_id = find_morethan_half_id(ids, len);
+	printf("more than half count id = %d\n", mh_id);
 
 	// find three more than quarter count user id test case.
 	const int ids_quarter[] = {4, 2, 5, 2, 6, 2, 6, 8, 4, 4, 6};
@@ -101,6 +139,12 @@ int main(int argc, const char *argv[])
 		&mq_id1, &mq_id2, &mq_id3);
 	printf("more than quarter count id = (%d, %d, %d)\n", 
 		mq_id1, mq_id2, mq_id3);
+
+	// find exactly half count user id test case.
+	const int ids_exhalf[] = {0, 1, 2, 1};
+	const int len_exhalf = sizeof(ids_exhalf) / sizeof(ids_exhalf[0]);
+	int mexh_id = find_exactly_half_id(ids_exhalf, len_exhalf);
+	printf("exactly half count id = %d\n", mexh_id);
 
 	return 0;
 }
