@@ -132,6 +132,43 @@ void quicksort_use_middle_pivot(NUMBER* array, NUMBER left, NUMBER right) {
 }
 
 /**
+* @brief use for heapsort to adjust a heap sort ordered from start to end.
+*
+* @param array array point.
+* @param start start index.
+* @param end end index.
+*/
+void heapadjust(NUMBER* array, NUMBER start, NUMBER end) {
+	NUMBER j = 0, preroot = array[start+(-1)];
+	for (j = start * 2; j <= end; j *= 2) {
+		if (j < end && array[j+(-1)] < array[j+1+(-1)]) { j ++; }
+		if (preroot >= array[j+(-1)]) break;
+		array[start+(-1)] = array[j+(-1)]; start = j;
+	}
+	array[start+(-1)] = preroot;
+}
+
+/**
+* @brief heap sort algorithm to sort array.
+* It use array to store heap tree.
+*
+* @param array array point.
+* @param length array length.
+*/
+void heapsort(NUMBER* array, NUMBER length) {
+	// bulld heap tree
+	NUMBER i = 0;
+	for (i = length/2; i > 0; i --) {
+		heapadjust(array, i, length);
+	}
+	// sort array and rebuild remain element
+	for (i = length; i > 1; i --) {
+		SWAP(array[1+(-1)], array[i+(-1)])
+		heapadjust(array, 1, i-1);
+	}
+}
+
+/**
 * @brief output maximum k number.
 *
 * @param array array point.
@@ -153,7 +190,8 @@ int main(int argc, const char *argv[])
 	printf("==============\n\n");
 
 	// quicksort(array, 0, TEST_ARRAY_LENGTH-1);
-	quicksort_use_middle_pivot(array, 0, TEST_ARRAY_LENGTH-1);
+	// quicksort_use_middle_pivot(array, 0, TEST_ARRAY_LENGTH-1);
+	heapsort(array, TEST_ARRAY_LENGTH);
 	printf("array after sort:\n");
 	print_array(array, TEST_ARRAY_LENGTH, ", \n");
 	printf("==============\n\n");
