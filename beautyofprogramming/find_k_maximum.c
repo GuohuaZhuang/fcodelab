@@ -111,6 +111,27 @@ void quicksort(NUMBER* array, NUMBER left, NUMBER right) {
 }
 
 /**
+* @brief quick sort use regular implement optimize with use middle pivot.
+*
+* @param array array point.
+* @param left left index.
+* @param right right index.
+*/
+void quicksort_use_middle_pivot(NUMBER* array, NUMBER left, NUMBER right) {
+	NUMBER pivot = array[(left+right)/2], i = left, j = right;
+	while (i <= j) {
+		while (array[i] < pivot) { i ++; }
+		while (array[j] > pivot) { j --; }
+		if (i <= j) {
+			if (i != j) { SWAP(array[i], array[j]) }
+			i ++, j --;
+		}
+	}
+	if (left < j) { quicksort_use_middle_pivot(array, left, j); }
+	if (right > i) { quicksort_use_middle_pivot(array, i, right); }
+}
+
+/**
 * @brief output maximum k number.
 *
 * @param array array point.
@@ -130,10 +151,13 @@ int main(int argc, const char *argv[])
 	printf("array before sort:\n");
 	print_array(array, TEST_ARRAY_LENGTH, ", \n");
 	printf("==============\n\n");
-	quicksort(array, 0, TEST_ARRAY_LENGTH-1);
+
+	// quicksort(array, 0, TEST_ARRAY_LENGTH-1);
+	quicksort_use_middle_pivot(array, 0, TEST_ARRAY_LENGTH-1);
 	printf("array after sort:\n");
 	print_array(array, TEST_ARRAY_LENGTH, ", \n");
 	printf("==============\n\n");
+
 	printf("output_k_maximum %d:\n", TEST_K);
 	output_k_maximum(array, TEST_ARRAY_LENGTH, TEST_K);
 	printf("==============\n\n");
