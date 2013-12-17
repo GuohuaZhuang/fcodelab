@@ -62,11 +62,47 @@ int greatest_common_divisor_subtraction(int x, int y) {
 				  : greatest_common_divisor_subtraction(y-x, x));
 }
 
+/**
+* @brief calculate greatest common divisor use divisible by two, it can use 
+* little calculate like division or many recursion.
+* we know, if a prime number like k, if x = k*x1, y = k*y1, then:
+*     gcd(x,y) = k*gcd(x,y)
+* and if a prime number p is like x = p*x2, but y%p != 0, so:
+*     gcd(x,y) = gcd(x2,y)
+* so use the prime number 2 to calculate it is a good idea, because divide 2 is
+* just right shift the number, it use a little cpu compute.
+*
+* @param x one number.
+* @param y another number.
+*
+* @return the greatest common divisor of x and y.
+*/
+int greatest_common_divisor_divisiblebytwo(int x, int y) {
+	if (x < y) { return greatest_common_divisor_divisiblebytwo(y, x); }
+	if (0 == y) { return x; }
+	if (0x01 & x) {
+		if (0x01 & y) { // x and y are all odd.
+			return greatest_common_divisor_divisiblebytwo(x-y, y);
+		} else { // x is odd, but y is even.
+			return greatest_common_divisor_divisiblebytwo(x, y>>1);
+		}
+	} else {
+		if (0x01 & y) { // x is even, but y is odd.
+			return greatest_common_divisor_divisiblebytwo(x>>1, y);
+		} else { // x and y are all even.
+			return (greatest_common_divisor_divisiblebytwo(x>>1, y>>1) << 1);
+		}
+	}
+}
+
 int main(int argc, const char *argv[])
 {
+	const int x = 42, y = 30;
 	printf("greatest_common_divisor = %d\n", 
-		greatest_common_divisor_euclidean(42, 30));
+		greatest_common_divisor_euclidean(x, y));
 	printf("greatest_common_divisor = %d\n", 
-		greatest_common_divisor_subtraction(42, 30));
+		greatest_common_divisor_subtraction(x, y));
+	printf("greatest_common_divisor = %d\n", 
+		greatest_common_divisor_divisiblebytwo(x, y));
 	return 0;
 }
