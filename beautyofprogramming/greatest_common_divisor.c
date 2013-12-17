@@ -42,12 +42,31 @@
 *
 * @return the greatest common divisor of x and y.
 */
-int greatest_common_divisor(int x, int y) {
-	return (y ? greatest_common_divisor(y, x%y) : x);
+int greatest_common_divisor_euclidean(int x, int y) {
+	return (y ? greatest_common_divisor_euclidean(y, x%y) : x);
+}
+
+/**
+* @brief calculate greatest common divisor use subtraction, it also come from 
+* Euclid's algorithm.
+*
+* @param x one number.
+* @param y another number.
+*
+* @return the greatest common divisor of x and y.
+*/
+int greatest_common_divisor_subtraction(int x, int y) {
+	if (0 == x) { return y; }
+	if (0 == y) { return x; }
+	return (x > y ? greatest_common_divisor_subtraction(x-y, y) 
+				  : greatest_common_divisor_subtraction(y-x, x));
 }
 
 int main(int argc, const char *argv[])
 {
-	printf("greatest_common_divisor = %d\n", greatest_common_divisor(42, 30));
+	printf("greatest_common_divisor = %d\n", 
+		greatest_common_divisor_euclidean(42, 30));
+	printf("greatest_common_divisor = %d\n", 
+		greatest_common_divisor_subtraction(42, 30));
 	return 0;
 }
