@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
 
 #define SWAP(a, b) { (a) ^= (b); (b) ^= (a); (a) ^= (b); }
 
@@ -82,6 +83,41 @@ int fibonacci_formula(int n) {
 	double sqrt_5 = sqrt(5);
 	return (1/sqrt_5) * ( pow((1+sqrt_5)/2, n) - pow((1-sqrt_5)/2, n));
 }
+
+// 
+// USE MATRIX TO COMPUTE FIBONACCI, TEMPORARITY PLACED HERE.
+// typedef struct _MATRIX {
+// 	int x[4];
+// } MATRIX;
+// 
+// MATRIX* matrix_identity() {
+// 	MATRIX* m = (MATRIX*) malloc(sizeof(MATRIX));
+// 	memset(m, 0, sizeof(MATRIX));
+// 	return m;
+// }
+// 
+// MATRIX* matrix_copy(const MATRIX* m) {
+// 	MATRIX* m_copy = (MATRIX*) malloc(sizeof(MATRIX));
+// 	memcpy(m_copy, m, sizeof(MATRIX));
+// 	return m_copy;
+// }
+// 
+// MATRIX* matrix_pow(const MATRIX* m, int n) {
+// 	MATRIX* result = matrix_identity();
+// 	MATRIX* tmp = matrix_copy(m);
+// 	for (; n; n >>= 1) {
+// 		if (n & 1) { result *= tmp; }
+// 		tmp *= tmp;
+// 	}
+// 	free(tmp);
+// 	return result;
+// }
+// 
+// int fibonacci_matrix(int n) {
+// 	MATRIX* an = matrix_pow(A, n-1);
+// 	return F1 * an(0, 0) + F0 * an(1, 0);
+// }
+// 
 
 int main(int argc, const char *argv[])
 {
