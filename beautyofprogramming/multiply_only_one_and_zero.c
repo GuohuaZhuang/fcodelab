@@ -54,14 +54,14 @@ NUMBER multiply_only_one_and_zero(const NUMBER N) {
 			}
 			X -= pow(10,k); k ++;
 		}
-		if (k > MAX_BIT) break;
+		if (k > MAX_BIT || X < 0) break;
 	}
 	return ERR_NUM;
 }
 
 int main(int argc, const char *argv[])
 {
-	const NUMBER N = 23;
+	const NUMBER N = 3;
 	NUMBER M = multiply_only_one_and_zero(N);
 	if (ERR_NUM != M) {
 		printf(""NF"*"NF" = "NF"\n", N, M, N*M);
