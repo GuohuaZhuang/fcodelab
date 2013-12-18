@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <math.h>
 
 #define SWAP(a, b) { (a) ^= (b); (b) ^= (a); (a) ^= (b); }
 
@@ -53,10 +54,40 @@ int fibonacci_previous(int n) {
 	return a;
 }
 
+/**
+* @brief compute fibonacci use general term formula by derivate by 
+* characteristic equation.
+* With recurrence formula of fibonacci:
+*     F(n) = F(n-1) + F(n-2)
+* so find r and s to make:
+*     F(n) - r*F(n-1) = s*(F(n-1) - r*F(n-2))
+*     F(n) = (s+r)*F(n-1) - (s*r)*F(n-2)
+* Then, 
+*     s+r = 1
+*     s*r = 1
+* So, r^2 - r - 1 = 0 (or s^2 - r - 1 = 0), so the characteristic formula is:
+*     x^2 = x + 1
+* and the solution of it is use general derivation (-b+sqrt(b^2-4ac))/2a and 
+* (-b-sqrt(b^2-4ac))/2a to get it:
+*     x1 = (1+sqrt(5))/2, x2 = (1-sqrt(5))/2
+* x1 != x2, so the f(n) = A*x1^n + B*X2^2.
+* So we can get f(0) = 0, f(1) = 1, so the we can get A=1/sqrt(5), B=-1/sqrt(5)
+*     F(n) = (1/sqrt(5)) * [((1+sqrt(5))/2)^n - ((1-sqrt(5))/2)^n]
+*
+* @param n a number to compute its fibonacci value.
+*
+* @return fibonacci value.
+*/
+int fibonacci_formula(int n) {
+	double sqrt_5 = sqrt(5);
+	return (1/sqrt_5) * ( pow((1+sqrt_5)/2, n) - pow((1-sqrt_5)/2, n));
+}
+
 int main(int argc, const char *argv[])
 {
 	const int n = 20;
 	printf("fibonacci_recursion = %d\n", fibonacci_recursion(n));
 	printf("fibonacci_previous = %d\n", fibonacci_previous(n));
+	printf("fibonacci_formula = %d\n", fibonacci_formula(n));
 	return 0;
 }
