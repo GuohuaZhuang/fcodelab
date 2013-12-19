@@ -139,6 +139,10 @@ int get_min_distance(const POINT* points, const int from, const int to,
 			}
 		}
 	}
+	// sort Y and then just compare not more than 7 point in every min-point.
+	// but it use more memory to sort the Y-axis. so it just reduce time from 
+	// O(N^2) to O(N*logN), and this N is the count include -M to +M points.
+	// So, it just depending on specific issues to optimize it.
 	return min_distance;
 }
 
