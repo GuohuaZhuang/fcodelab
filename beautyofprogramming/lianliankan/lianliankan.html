@@ -3,6 +3,9 @@
 <head>
 	<title>lianliankan implement in javascript</title>
 	<style type="text/css" media="screen">
+/*	background-image: url(./assets/12.gif);
+	background-position: center;
+	background-repeat: no-repeat;*/
 	body {
 		margin: 0px;
 	}
@@ -32,6 +35,7 @@
 		margin: 0px;
 		width: 30px;
 		height: 30px;
+		cursor: pointer;
 	}
 	.canvas_path {
 		border: 0px;
@@ -55,8 +59,9 @@
 		var NAVIGATE_TYPE = { NONE: 0, TOP: 1, BOTTOM: 2, LEFT: 3, RIGHT: 4 }
 	}
 	// global variables
-	var ROWS = 10;
-	var COLUMNS = 12;
+	var ROWS = 4;
+	var COLUMNS = 4;
+	var ELEMENT_TYPE_COUNT = 15;
 	var MAX_INT = Math.pow(2, 53);
 	var g_elements = null;
 	var g_crossing = null;
@@ -64,9 +69,15 @@
 	var g_navigate = null;
 	var g_preelement = null;
 	var g_curelement = null;
+	var g_remaincount = 0;
 	var panel = null; 
 	// init variables struct
 	function init_struct() {
+		if (ROWS * COLUMNS % 2 != 0) {
+			alert('invalid ROWS or COLUMNS!');
+			throw new Error('invalid ROWS or COLUMNS!');
+		}
+		g_remaincount = 0;
 		var arrayrows = ROWS+1, arraycolumns = COLUMNS+1;
 		g_elements = new Array(ROWS+2);
 		for (var i = 0; i <= arrayrows; i ++) {
@@ -76,7 +87,25 @@
 					g_elements[i][j] = new ELEMENT(0);
 					continue;
 				}
-				g_elements[i][j] = new ELEMENT(Math.floor(Math.random()*15)+1);
+				g_elements[i][j] = new ELEMENT(Math.floor(g_remaincount++/2)%ELEMENT_TYPE_COUNT + 1);
+			}
+		}
+		random_shuffl();
+		check_deadlock();
+		init_table();
+	}
+	function random_shuffl() {
+		// random exchange shuffl
+		var x = 0, y = 0;
+		for (var i = 1; i <= ROWS; i ++) {
+			for (var j = 1; j <= COLUMNS; j ++) {
+				x = Math.floor(Math.random() * ROWS) + 1;
+				y = Math.floor(Math.random() * COLUMNS) + 1;
+				if (x != i || y != j) {
+					g_elements[i][j].flag ^= g_elements[x][y].flag;
+					g_elements[x][y].flag ^= g_elements[i][j].flag;
+					g_elements[i][j].flag ^= g_elements[x][y].flag;
+				}
 			}
 		}
 	}
@@ -97,8 +126,8 @@
 			}
 		}
 	}
-	// init table
-	function init_table() {
+	// create table
+	function create_table() {
 		panel = document.getElementById("panel");
 		var arrayrows = ROWS+1, arraycolumns = COLUMNS+1;
 		for (var i = 0; i <= arrayrows; i ++) {
@@ -107,13 +136,20 @@
 				var cell = line.insertCell(0);
 			}
 		}
+		panel.onclick = elementclick_handler;
+	}
+	// init table
+	function init_table() {
 		for (i = 1; i <= ROWS; i ++) {
 			for (j = 1; j <= COLUMNS; j ++) {
-				panel.rows[i].cells[j].innerHTML = 
-					'<img src="./assets/' + g_elements[i][j].flag + '.gif" />';
+				if (0 == g_elements[i][j].flag) {
+					panel.rows[i].cells[j].innerHTML = '';
+				} else {
+					panel.rows[i].cells[j].innerHTML = 
+						'<img src="./assets/' + g_elements[i][j].flag + '.gif" />';
+				}
 			}
 		}
-		panel.onclick = elementclick_handler;
 	}
 	function elementclick_handler(event) {
 		event = event ? event : window.event;
@@ -144,23 +180,69 @@
 		g_preelement = null;
 		g_curelement = null;
 	}
+	function check_win() {
+		if (0 == g_remaincount) {
+			alert("You win!!!");
+			return;
+		}
+		if (g_remaincount > 0) { check_deadlock(); }
+	}
+	function update_remain() {
+		g_remaincount -= 2;
+	}
+	function check_deadlock() {
+		var shuffl_flag = false;
+		while (is_deadlock()) {
+			random_shuffl();
+			console.log('it is deadlock, and shuffl it!');
+			shuffl_flag = true;
+		}
+		if (shuffl_flag) { init_table(); }
+	}
+	function is_deadlock() {
+		console.log('is_deadlock');
+		for (var i = 1; i <= ROWS; i ++) {
+			for (var j = 1; j <= COLUMNS; j ++) {
+				if (0 == g_elements[i][j].flag) { continue; }
+				for (var m = i; m <= ROWS; m ++) {
+					for (var n = 1; n <= COLUMNS; n ++) {
+						if (i == m && j == n) { continue; }
+						if (haslinkup(i, j, m, n)) {
+							return false;
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
+	function haslinkup(x1, y1, x2, y2) {
+		if (g_elements[x1][y1].flag != g_elements[x2][y2].flag) {
+			return false;
+		}
+		init_crossing_and_distance();
+		if (findpath(new POINT(x1,y1), new POINT(x2,y2), 0, 0)) {
+			console.log("haslinkup(" + x1 + "," + y1 + ", " + x2 + "," + y2 + ")");
+			return true;
+		}
+		return false;
+	}
 	function linkup() {
 		if (null == g_preelement || null == g_curelement) {
-			return ;
+			return;
 		}
-		var f = 0;
-		do {
-			if (g_elements[g_preelement.x][g_preelement.y].flag
-					!= g_elements[g_curelement.x][g_curelement.y].flag) {
-				f = 0; break;
-			}
-			init_crossing_and_distance();
-			if (findpath(g_preelement, g_curelement, 0, 0)) {
-				drawpath();
-				f = 1; break;
-			}
-		} while (0);
-		cleanup(f);
+		if (g_elements[g_preelement.x][g_preelement.y].flag
+				!= g_elements[g_curelement.x][g_curelement.y].flag) {
+			cleanup(0);
+			return;
+		}
+		init_crossing_and_distance();
+		if (findpath(g_preelement, g_curelement, 0, 0)) {
+			drawpath();
+			cleanup(1);
+			update_remain();
+			return;
+		}
 	}
 	function point_equal(p, q) {
 		return (p.x == q.x && p.y == q.y);
@@ -235,6 +317,7 @@
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		context.restore();
 		canvas.style.display = 'none';
+		check_win();
 	}
 	function findpath(p, q, crossing, distance) {
 		if (crossing > 2) return false;
@@ -285,8 +368,8 @@
 		return false;
 	}
 	function init() {
+		create_table();
 		init_struct();
-		init_table();
 	}
 	</script>
 </head>
