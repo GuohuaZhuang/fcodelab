@@ -70,6 +70,8 @@
 	var g_preelement = null;
 	var g_curelement = null;
 	var g_remaincount = 0;
+	var g_tippreelement = null;
+	var g_tipcurelement = null;
 	var panel = null; 
 	// init variables struct
 	function init_struct() {
@@ -200,7 +202,6 @@
 		if (shuffl_flag) { init_table(); }
 	}
 	function is_deadlock() {
-		console.log('is_deadlock');
 		for (var i = 1; i <= ROWS; i ++) {
 			for (var j = 1; j <= COLUMNS; j ++) {
 				if (0 == g_elements[i][j].flag) { continue; }
@@ -208,6 +209,8 @@
 					for (var n = 1; n <= COLUMNS; n ++) {
 						if (i == m && j == n) { continue; }
 						if (haslinkup(i, j, m, n)) {
+							g_tippreelement = new POINT(i, j);
+							g_tipcurelement = new POINT(m, n);
 							return false;
 						}
 					}
@@ -222,7 +225,6 @@
 		}
 		init_crossing_and_distance();
 		if (findpath(new POINT(x1,y1), new POINT(x2,y2), 0, 0)) {
-			console.log("haslinkup(" + x1 + "," + y1 + ", " + x2 + "," + y2 + ")");
 			return true;
 		}
 		return false;
@@ -371,6 +373,21 @@
 		create_table();
 		init_struct();
 	}
+	function set_tip_style(style) {
+		if (null != g_tippreelement) {
+			panel.rows[g_tippreelement.x].cells[g_tippreelement.y].childNodes[0].style.border = style;
+		}
+		if (null != g_tipcurelement) {
+			panel.rows[g_tipcurelement.x].cells[g_tipcurelement.y].childNodes[0].style.border = style;
+		}
+	}
+	function show_tip_couple() {
+		set_tip_style('solid #ff00aa 3px');
+		setTimeout(remove_tip_couple_style, 500);
+	}
+	function remove_tip_couple_style() {
+		set_tip_style('');
+	}
 	</script>
 </head>
 
@@ -379,5 +396,6 @@
 	Your browser does not support the canvas element.
 	</canvas>
 	<table id="panel" class="table_panel"></table>
+	<button onclick="javascript:show_tip_couple()" >tip me please</button>
 </body>
 </html>
