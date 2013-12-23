@@ -18,6 +18,8 @@
 /**
 * @file furthest_point.c
 * @brief find one furthest pair of points from points use exhaustion method.
+* This algorithm use maximum O(n^2) times in find the convex polygon vertices of
+* a given set of points.
 * @author firstboy0513
 * @version 0.0.1
 * @date 2013-12-20
@@ -160,7 +162,7 @@ void quicksort_vector_by_angle(POINT* points, int size) {
 		cosines[i] = cosines_angel(points[i]);
 	}
 	quicksort_vectorangle(points, cosines, 0, size-1);
-	printout_cosines(cosines, size);
+	//// printout_cosines(cosines, size);
 	free(cosines);
 }
 
@@ -223,8 +225,30 @@ void printout_vertices(POINT* edges, int size, int* flags) {
 	int i = 0;
 	for (i = 0; i < size; i ++) {
 		if (0 == flags[i]) { continue; }
-		// printf("%d => DEBUG(%d,%d)\n", i, edges[i].x, edges[i].y);
 		printf("(%d,%d)\n", edges[i].x, edges[i].y);
+	}
+}
+
+/**
+* @brief save vertices result to output storage.
+*
+* @param edges all edges of polygon, include not invalid point.
+* @param size edges size.
+* @param flags flags to determine whether the point is invalid in edges.
+* @param pvertices output vertices.
+* @param pcount output vertices count.
+*/
+void save_vertices_result(POINT* edges, int size, int* flags, 
+	POINT** pvertices, int* pcount) {
+	*pcount = 0;
+	int i = 0, j = 0;
+	for (i = 0; i < size; i ++) {
+		if (0 != flags[i]) { (*pcount) ++; }
+	}
+	*pvertices = (POINT*) malloc(sizeof(POINT) * (*pcount));
+	for (i = 0; i < size; i ++) {
+		if (0 == flags[i]) { continue; }
+		(*pvertices)[j].x = edges[i].x; (*pvertices)[j].y = edges[i].y; j ++;
 	}
 }
 
@@ -249,15 +273,15 @@ int find_convex_polygon_vertices(const POINT* points, const int size,
 	// 1.2 把其余点与基点作向量，然后按这个向量的x轴夹角排序。(升序)
 	POINT* points_copy = (POINT*) malloc(sizeof(POINT) * size);
 	memcpy(points_copy, points, sizeof(POINT) * size);
-	printout_points(points_copy, size);
+	//// printout_points(points_copy, size);
 	POINT* pvector = convert_point_to_vector_by_base(points_copy, size, base);
-	printout_points(pvector, size);
+	//// printout_points(pvector, size);
 	quicksort_vector_by_angle(pvector, size);
 	/// DEBUG
-	printout_points(pvector, size);
+	//// printout_points(pvector, size);
 	// 1.3 将所有这些向量首尾相连。
 	POINT* edges = link_edge(pvector, size);
-	printout_points(pvector, size);
+	//// printout_points(pvector, size);
 	// 1.4 回溯删除利用外积判断方向不在凸边形的边上的向量。
 	//     (PS:我刚刚自己证明了这个右手法则如果大姆指向上为正，向下为负的：
 	//          向量a和向量b的外积也叫叉积，为x1y2-x2y1。试想，如果结果为：
@@ -272,14 +296,71 @@ int find_convex_polygon_vertices(const POINT* points, const int size,
 	int* flags = backtrack_vertices(edges, size);
 	// printout_vertices(edges, size, flags);
 	restore_vertices(edges, size, flags, base);
-	printout_vertices(edges, size, flags);
+	save_vertices_result(edges, size, flags, pvertices, pcount);
+	//// printout_vertices(edges, size, flags);
 	free(points_copy); free(flags);
-	return 0;
+	return *pcount;
 }
 
+/**
+* @brief convert point to vertor from point b to point a.
+*
+* @param a end point.
+* @param b start point.
+*
+* @return the vertor from point b to point a.
+*/
+POINT convert_point_to_vector(POINT a, POINT b) {
+	POINT point;
+	point.x = a.x - b.x;
+	point.y = a.y - b.y;
+	return point;
+}
+
+/**
+* @brief use Shamos's algorithm to comput the diameter of given convex polygon.
+*
+* @param vertices given convex polygon vertices.
+* @param count vertices count.
+* @param pa output diameter one point.
+* @param pb output diameter another point.
+*
+* @return diameter of the convex polygon.
+*/
+double get_convex_polygon_diameter(POINT* vertices, int count, 
+	POINT* pa, POINT* pb) {
+	double max_distance = 0, current_distance = 0;
+	int curmax_area = 0, current_area = 0;
+	if (!vertices || count <= 0 || !pa || !pb) {
+		return 0;
+	}
+	int i = 0, j = 0, k = 0;
+	for (i = 0, k = i+2; i < count; i ++) {
+		curmax_area = 0;
+		do {
+			curmax_area = current_area;
+			j = (i+1)%count;
+			POINT line = convert_point_to_vector(vertices[j], vertices[i]);
+			POINT point = convert_point_to_vector(vertices[k], vertices[i]);
+			current_area = cross_multiply(line, point);
+			current_distance = get_distance(vertices[i], vertices[k]);
+			if (current_distance > max_distance) {
+				max_distance = current_distance;
+				(*pa) = vertices[i]; (*pb) = vertices[k];
+			}
+			k = (k+1)%count;
+		} while (current_area >= curmax_area);
+		k = (k > 0) ? (k-1) : (count-1);
+	}
+	return get_distance(*pa, *pb);
+}
 
 int main(int argc, const char *argv[])
 {
+	POINT a, b;
+	// TEST CASES
+//	const POINT points[] = {
+//		{6,0}, {8,11}, {12,16}, {16,22}, {27,29} };
 //	const POINT points[] = { 
 //		{8,12}, {17,11}, {6,5}, {12,3}, {13,8}, {15,16}, {2,10} };
 //		{8,12}, {17,11}, {12,3}, {13,8}, {15,16}, {2,10} };
@@ -290,20 +371,34 @@ int main(int argc, const char *argv[])
 //		{6,0}, {16,22}, {8,11}, {9,27}, {20,2}, {13,2}, {25,7}, {12,29}, 
 //		{18,12}, {27,29}, {16,13}, {22,1} };
 	const POINT points[] = {
-		{3,6}, {17,15}, {13,15}, {6,12}, {9,1}, {2,7}, {10,19}, {3,6}, {0,6}, {12,16}, {11,8}, {7,9}, {2,10}, {2,3}, {7,15}, {9,2}, {2,18}, {9,7}, {13,16}, {11,2}, {9,13}, {1,19}, {4,17}, {18,4}, {15,10}, {13,6}, {11,0}, {16,13}, {2,10}, {16,1}, {5,5}, {4,7}, {16,5}, {6,9}, {13,17}, {4,15}, {2,5}, {14,7}, {14,4}, {3,10}, {7,8}, {16,18}, {8,4}, {3,11}, {14,19}, {12,0}, {16,8}, {19,12}, {6,6}, {14,19}, {15,10}, {14,18}, {7,1}, {17,2}, {17,12}, {12,16}, {1,0}, {6,1}, {5,9}, {4,19}, {0,9}, {11,17}, {17,11}, {1,15}, {9,7}, {7,16}, {17,13}, {6,5}, {6,3}, {19,4}, {8,11}, {12,9}, {3,19}, {10,8}, {8,15}, {0,9}, {16,3}, {18,5}, {6,11}, {1,15}, {19,8}, {4,8}, {1,10}, {13,0}, {14,4}, {4,14}, {7,16}, {3,11}, {7,5}, {19,16}, {12,11}, {17,8}, {15,7}, {14,1}, {18,15}, {9,17}, {15,13}, {18,8}, {3,11}, {8,9} };
-//	const POINT points[] = {
-//		{6,0}, {8,11}, {12,16}, {16,22}, {27,29} };
+		{3,6}, {17,15}, {13,15}, {6,12}, {9,1}, {2,7}, {10,19}, {3,6}, {0,6}, 
+		{12,16}, {11,8}, {7,9}, {2,10}, {2,3}, {7,15}, {9,2}, {2,18}, {9,7}, 
+		{13,16}, {11,2}, {9,13}, {1,19}, {4,17}, {18,4}, {15,10}, {13,6}, 
+		{11,0}, {16,13}, {2,10}, {16,1}, {5,5}, {4,7}, {16,5}, {6,9}, {13,17}, 
+		{4,15}, {2,5}, {14,7}, {14,4}, {3,10}, {7,8}, {16,18}, {8,4}, {3,11}, 
+		{14,19}, {12,0}, {16,8}, {19,12}, {6,6}, {14,19}, {15,10}, {14,18}, 
+		{7,1}, {17,2}, {17,12}, {12,16}, {1,0}, {6,1}, {5,9}, {4,19}, {0,9}, 
+		{11,17}, {17,11}, {1,15}, {9,7}, {7,16}, {17,13}, {6,5}, {6,3}, {19,4}, 
+		{8,11}, {12,9}, {3,19}, {10,8}, {8,15}, {0,9}, {16,3}, {18,5}, {6,11}, 
+		{1,15}, {19,8}, {4,8}, {1,10}, {13,0}, {14,4}, {4,14}, {7,16}, {3,11}, 
+		{7,5}, {19,16}, {12,11}, {17,8}, {15,7}, {14,1}, {18,15}, {9,17}, 
+		{15,13}, {18,8}, {3,11}, {8,9} };
 	const int size = sizeof(points) / sizeof(points[0]);
 
 	POINT* vertices = NULL;
 	int count = 0, i = 0;
 	find_convex_polygon_vertices(points, size, &vertices, &count);
-	printf("there are %d count of vertices:\n", count);
+	printf("there are %d count of vertices: ", count);
 	for (i = 0; i < count; i ++) {
-		printf("(%d,%d)\n", vertices[i].x, vertices[i].y);
+		if (0 != i) { printf(", "); }
+		printf("(%d,%d)", vertices[i].x, vertices[i].y);
 	}
+	printf("\n");
+	double max_distance = get_convex_polygon_diameter(vertices, count, &a, &b);
+	printf("and the diameter is %g, from (%d,%d) to (%d,%d)\n", max_distance, 
+		a.x, a.y, b.x, b.y);
+	if (vertices) { free(vertices); }
 
-//	POINT a, b;
 //	double max_distance = find_furthest_point_exhaust(points, size, &a, &b);
 //
 //	if (INT32_MIN != max_distance) {
