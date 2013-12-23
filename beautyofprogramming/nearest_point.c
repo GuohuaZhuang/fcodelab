@@ -59,8 +59,8 @@ void printout_points(const POINT* points, const int size) {
 *
 * @return Euclidean distance.
 */
-int get_distance(const POINT a, const POINT b) {
-	return pow(a.x - b.x, 2) + pow(a.y - b.y, 2);
+double get_distance(const POINT a, const POINT b) {
+	return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
 
 /**
@@ -73,9 +73,9 @@ int get_distance(const POINT a, const POINT b) {
 *
 * @return the nearest distance.
 */
-int find_nearest_point_exhaust(const POINT* points, const int size, 
+double find_nearest_point_exhaust(const POINT* points, const int size, 
 	POINT* pa, POINT* pb) {
-	int i = 0, j = 0, min_distance = INT32_MAX, cur_distance = 0;
+	int i = 0, j = 0; double min_distance = INT32_MAX, cur_distance = 0;
 	if (!points || size <= 0 || !pa || !pb) {
 		printf("[ERR] -- find_nearest_point_exhaust input invalid!\n");
 		return min_distance;
@@ -104,10 +104,10 @@ int find_nearest_point_exhaust(const POINT* points, const int size,
 *
 * @return minimum distance.
 */
-int get_min_distance(const POINT* points, const int from, const int to, 
+double get_min_distance(const POINT* points, const int from, const int to, 
 	POINT* pa, POINT* pb) {
-	int i = 0, j = 0;
-	int min_distance = INT32_MAX, middle = (from+to)/2, cur_distance = 0;
+	int i = 0, j = 0, middle = (from+to)/2;
+	double min_distance = INFINITY, cur_distance = 0;
 	if (to <= from) { return min_distance; }
 	if (to - from == 1) {
 		*pa = points[from]; *pb = points[to];
@@ -115,13 +115,13 @@ int get_min_distance(const POINT* points, const int from, const int to,
 		return min_distance;
 	}
 	// get the minimum distance in the left region
-	POINT a_left, b_left; int min_distance_left = INT32_MAX;
+	POINT a_left, b_left; double min_distance_left = INFINITY;
 	min_distance_left = get_min_distance(points,from,middle,&a_left,&b_left);
 	if (min_distance_left < min_distance) {
 		min_distance = min_distance_left; *pa = a_left; *pb = b_left;
 	}
 	// get the minimum distance in the right region
-	POINT a_right, b_right; int min_distance_right = INT32_MAX;
+	POINT a_right, b_right; double min_distance_right = INFINITY;
 	min_distance_right = get_min_distance(points,middle+1,to,&a_right,&b_right);
 	if (min_distance_right < min_distance) {
 		min_distance = min_distance_right; *pa = a_right; *pb = b_right;
@@ -182,9 +182,9 @@ void quicksort_point(POINT* points, int left, int right) {
 *
 * @return the nearest distance.
 */
-int find_nearest_point_merger(const POINT* points, const int size, 
+double find_nearest_point_merger(const POINT* points, const int size, 
 	POINT* pa, POINT* pb) {
-	int min_distance = INT32_MAX;
+	double min_distance = INFINITY;
 	if (!points || size <= 0 || !pa || !pb) {
 		printf("[ERR] -- find_nearest_point_merger input invalid!\n");
 		return min_distance;
@@ -207,11 +207,11 @@ int main(int argc, const char *argv[])
 	const int size = sizeof(points) / sizeof(points[0]);
 	POINT a, b;
 
-	// int min_distance = find_nearest_point_exhaust(points, size, &a, &b);
-	int min_distance = find_nearest_point_merger(points, size, &a, &b);
+	// double min_distance = find_nearest_point_exhaust(points, size, &a, &b);
+	double min_distance = find_nearest_point_merger(points, size, &a, &b);
 
 	if (INT32_MAX != min_distance) {
-		printf("minimum distance is %d\n", min_distance);
+		printf("minimum distance is %g\n", min_distance);
 		printf("\ta(%d,%d) to b(%d,%d)\n", a.x, a.y, b.x, b.y);
 	} else {
 		printf("[ERR] -- some error occur to find nearest point.\n");

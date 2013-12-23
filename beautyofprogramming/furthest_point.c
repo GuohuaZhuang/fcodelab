@@ -85,7 +85,6 @@ double find_furthest_point_exhaust(const POINT* points, const int size,
 	for (i = 0; i < size; i ++) {
 		for (j = i+1; j < size; j ++) {
 			cur_distance = get_distance(points[i], points[j]);
-			// printf("cur_distance = %f\n", cur_distance);
 			if (cur_distance > max_distance) {
 				max_distance = cur_distance;
 				*pa = points[i]; *pb = points[j];
@@ -95,6 +94,14 @@ double find_furthest_point_exhaust(const POINT* points, const int size,
 	return max_distance;
 }
 
+/**
+* @brief find the minimum point which is the minimum y-axis and then x-axis.
+*
+* @param points all points.
+* @param size points count.
+*
+* @return the minimum point.
+*/
 POINT search_minimum_point(const POINT* points, const int size) {
 	POINT base; base.x = points[0].x; base.y = points[0].y;
 	int i = 0;
@@ -107,6 +114,17 @@ POINT search_minimum_point(const POINT* points, const int size) {
 	return base;
 }
 
+/**
+* @brief convert point to vertor from base point to one point in the points set.
+* Note this function just modify the element in the points array input, and 
+* not malloc any new memory.
+*
+* @param points all points.
+* @param size points count.
+* @param base base point.
+*
+* @return the vector now in the points set.
+*/
 POINT* convert_point_to_vector_by_base(POINT* points, int size, POINT base) {
 	int i = 0;
 	for (i = 0; i < size; i ++) {
@@ -115,13 +133,31 @@ POINT* convert_point_to_vector_by_base(POINT* points, int size, POINT base) {
 	return points;
 }
 
+/**
+* @brief get cosines value as the angel value, which the cosine is bigger, the 
+* angel is smaller. It is the dot point with i(1,0) vector.
+*
+* @param v given vector.
+*
+* @return return the angel between the vector and x-axis, if the denominator is 
+* zero, then return INFINITY. It just let the base point order in the first.
+*/
 double cosines_angel(POINT v) {
-	// dot point with i(1,0) vector
 	double denominator = v.x*v.x + v.y*v.y;
 	if (denominator <= 0) { return INFINITY; }
 	return (v.x) / sqrt(v.x*v.x + v.y*v.y);
 }
 
+/**
+* @brief swap vertor and angel.
+*
+* @param points named points, it is the vector the true.
+* @param cosines cosines of the angel between x-axis.
+* @param i one index.
+* @param j anotheer index.
+*
+* @return just a macro.
+*/
 #define SWAP_VECTORANGLE(points, cosines, i, j) {							\
 	_tmpswap = cosines[i]; cosines[i] = cosines[j]; cosines[j] = _tmpswap;	\
 	points[i].x ^= points[j].x; points[i].y ^= points[j].y;					\
@@ -129,6 +165,14 @@ double cosines_angel(POINT v) {
 	points[i].x ^= points[j].x; points[i].y ^= points[j].y;					\
 }
 
+/**
+* @brief use quicksort to sort the vector with the cosines descending.
+*
+* @param points vectors.
+* @param cosines cosines angel.
+* @param left left index use in quicksort.
+* @param right right index use in quicksort.
+*/
 void quicksort_vectorangle(POINT* points, double* cosines, 
 	int left, int right) {
 	int i = left, j = right;
@@ -145,6 +189,13 @@ void quicksort_vectorangle(POINT* points, double* cosines,
 	if (right > i) { quicksort_vectorangle(points, cosines, i, right); }
 }
 
+/**
+* @brief print out the cosines value.
+* I thought is just use for a debug, not real use.
+*
+* @param cosines cosines array.
+* @param size cosines count.
+*/
 void printout_cosines(double* cosines, int size) {
 	int i = 0;
 	for (i = 0; i < size; i ++) {
@@ -154,7 +205,12 @@ void printout_cosines(double* cosines, int size) {
 	printf("\n");
 }
 
-// quick sort descending as cosines bigger, then angel smaller.
+/**
+* @brief quick sort descending as cosines bigger, then angel smaller.
+*
+* @param points vectors array.
+* @param size vector count.
+*/
 void quicksort_vector_by_angle(POINT* points, int size) {
 	int i = 0;
 	double* cosines = (double*) malloc(sizeof(double) * size);
@@ -162,10 +218,19 @@ void quicksort_vector_by_angle(POINT* points, int size) {
 		cosines[i] = cosines_angel(points[i]);
 	}
 	quicksort_vectorangle(points, cosines, 0, size-1);
-	//// printout_cosines(cosines, size);
 	free(cosines);
 }
 
+/**
+* @brief link all point as an edge.
+* Note this function just modify the element in the points array input, and 
+* not malloc any new memory.
+*
+* @param vector vectors array.
+* @param size vectors count.
+*
+* @return linked edges point.
+*/
 POINT* link_edge(POINT* vector, int size) {
 	int i = 0;
 	for (i = size-1; i > 0; i --) {
@@ -175,20 +240,38 @@ POINT* link_edge(POINT* vector, int size) {
 	return vector;
 }
 
+/**
+* @brief calculate two vector cross multiply. (Or called cross product)
+* It use right-hand from v1 to v2.
+*
+* @param v1 one vector.
+* @param v2 another vector.
+*
+* @return cross multiply value.
+*/
 int cross_multiply(POINT v1, POINT v2) {
 	return (v1.x*v2.y - v2.x*v1.y);
 }
 
-// 会确保flags[1]=1, flags[size-1]=1
+/**
+* @brief backtrack to remove invalid vectices.
+* It can be sure the flags[1]=1, flags[size-1]=1, it means the first and the 
+* end vectices are valid.
+*
+* @param edges all edges array.
+* @param size edges count.
+*
+* @return return remain vectices corresponding index flags array.
+*/
 int* backtrack_vertices(POINT* edges, int size) {
 	int* flags = (int*) malloc(sizeof(int) * size);
 	int i = 0, j = 0, m = 0, n = 0;
 	for (i = 0; i < size; i ++) { flags[i] = 0; }
-	// 先倒着找一遍
+	// find from end to front.
 	for (i = size-1, j = i-1; i >= 2 && j >= 1;) {
 		if (cross_multiply(edges[j], edges[i]) > 0) {
 			flags[i] = 1;
-			// 向前再回溯删除不必要的顶点
+			// backtrack from current to end.
 			for (m = i, n = m+1; m < size-1 && n < size;) {
 				while (flags[n] == 0 && n < size) { n ++; }
 				if (n >= size) { break; }
@@ -200,7 +283,6 @@ int* backtrack_vertices(POINT* edges, int size) {
 				edges[n].x += edges[m].x; edges[n].y += edges[m].y;
 				m = n; n ++;
 			}
-
 			i = j; j --;
 			continue;
 		}
@@ -211,6 +293,14 @@ int* backtrack_vertices(POINT* edges, int size) {
 	return flags;
 }
 
+/**
+* @brief restore the vectices to the original points.
+*
+* @param edges all edges.
+* @param size edges count.
+* @param flags valid index flags array.
+* @param base base point.
+*/
 void restore_vertices(POINT* edges, int size, int* flags, POINT base) {
 	int i = 0, j = 0;
 	flags[0] = 1; edges[0].x = base.x; edges[0].y = base.y;
@@ -221,6 +311,13 @@ void restore_vertices(POINT* edges, int size, int* flags, POINT base) {
 	}
 }
 
+/**
+* @brief print out the vertices.
+*
+* @param edges all edges.
+* @param size edges count.
+* @param flags valid index flags array.
+*/
 void printout_vertices(POINT* edges, int size, int* flags) {
 	int i = 0;
 	for (i = 0; i < size; i ++) {
@@ -268,37 +365,23 @@ int find_convex_polygon_vertices(const POINT* points, const int size,
 		printf("[ERR] -- find_convex_polygon_vertices input invalid!\n");
 		return -1;
 	}
-	// 1.1 取min(y,x)点为基点（直接找基点）该点也必然为凸边形的顶点。
+	// 1.1 find min(y-axis, x-axis) base point.
 	POINT base = search_minimum_point(points, size);
-	// 1.2 把其余点与基点作向量，然后按这个向量的x轴夹角排序。(升序)
+	// 1.2 convert point to vector by base and then sort by angel with x-axis
 	POINT* points_copy = (POINT*) malloc(sizeof(POINT) * size);
 	memcpy(points_copy, points, sizeof(POINT) * size);
-	//// printout_points(points_copy, size);
 	POINT* pvector = convert_point_to_vector_by_base(points_copy, size, base);
-	//// printout_points(pvector, size);
 	quicksort_vector_by_angle(pvector, size);
-	/// DEBUG
-	//// printout_points(pvector, size);
-	// 1.3 将所有这些向量首尾相连。
+	// 1.3 link all vector as edges as a polygon
 	POINT* edges = link_edge(pvector, size);
-	//// printout_points(pvector, size);
-	// 1.4 回溯删除利用外积判断方向不在凸边形的边上的向量。
-	//     (PS:我刚刚自己证明了这个右手法则如果大姆指向上为正，向下为负的：
-	//          向量a和向量b的外积也叫叉积，为x1y2-x2y1。试想，如果结果为：
-	//          x1y2-x2y1 > 0，则x1/y1 > x2/y2，也就是cot(a)的值比cot(b)大，
-	//          画出cot曲线看看，在0~pi的区间里，也就是说a与x轴夹角比b与x轴
-	//          夹角小，所以从a到b的右手法则四个手指从a扫向b，大姆指向上。
-	//          反之亦然：大姆指向下，四手指从b扫向a，a的夹角比b大。
-	//          在pi到2pi的cot曲线里也相同。
-	//          如果x1y2-x2y1 == 0，说明a与b两个向量为么同向，要么反向。
-	//     )
-	// 1.5 最后首尾相连的就是凸边形的边。
+	// 1.4 back track to find vertices use cross multiply sign
 	int* flags = backtrack_vertices(edges, size);
-	// printout_vertices(edges, size, flags);
+	// 1.5 restore the end result vertices of convex polygon
 	restore_vertices(edges, size, flags, base);
 	save_vertices_result(edges, size, flags, pvertices, pcount);
-	//// printout_vertices(edges, size, flags);
+
 	free(points_copy); free(flags);
+
 	return *pcount;
 }
 

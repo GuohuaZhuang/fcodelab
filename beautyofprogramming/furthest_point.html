@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>furthest points visual page</title>
+	<style type="text/css" media="screen">
+	body {
+		text-align: center;
+	}
+	.canvas_panel {
+		width: 400;
+		height: 800;
+	}
+	</style>
+	<script type="text/javascript" charset="utf-8">
+	function POINT(x, y) {
+		this.x = x; this.y = y;
+	}
+	function replaceAll(txt, replace, with_this) {
+		return txt.replace(new RegExp(replace, 'g'),with_this);
+	}
+	function init() {
+	}
+	function readpoints() {
+		var _points = document.getElementById('points');
+		var textpoints = _points.value;
+		textpoints = textpoints.replace(new RegExp('\\(', 'g'), '');
+		textpoints = textpoints.replace(new RegExp('\\)', 'g'), '');
+		textpoints = textpoints.replace(new RegExp(',', 'g'), ' ');
+		var linepoints = textpoints.split("\n");
+		var points = new Array();
+		for (var i = 0; i < linepoints.length; i ++) {
+			var linepoint = linepoints[i].split(" ");
+			if (linepoint.length != 2) { continue; }
+			points.push(new POINT(linepoint[0], linepoint[1]));
+		}
+		return points;
+	}
+	function paint() {
+		var points = readpoints();
+		var panel = document.getElementById('panel');
+		var context = panel.getContext('2d');
+		context.beginPath();
+		context.fillStyle = 'blue';
+		for (var i = 0; i < points.length; i ++) {
+			context.arc(points[i].x*10, points[i].y*10, 2, 0, Math.PI*2, true);
+		}
+		context.closePath();
+		context.fill();
+		context.fillStyle = '#8B2323';
+		for (var i = 0; i < points.length; i ++) {
+			context.fillText("("+points[i].x+","+points[i].y+")", points[i].x*10, points[i].y*10+10);
+		}
+
+		showcanvas();
+	}
+	function showcanvas() {
+		var inputdiv = document.getElementById('inputdiv');
+		var panel = document.getElementById('panel');
+		inputdiv.style.display = 'none';
+		panel.style.display = 'block';
+	}
+	</script>
+</head>
+
+<body onload="init()">
+	<div id="inputdiv">
+		<textarea id="points" name="points" rows="20" cols="40">
+(16,13)
+(25,27)
+(25,23)
+(12,16)
+(1,9)
+(7,2)
+(19,20)
+(16,23)
+(6,0)
+(16,22)
+(8,11)
+(9,27)
+(20,2)
+(13,2)
+(25,7)
+(12,29)
+(18,12)
+(27,29)
+(16,13)
+(22,1)</textarea><br/>
+		<button onclick="paint()">paint</button>
+	</div>
+	<canvas id="panel" class="canvas_panel" style="display:none" width="400" height="800">
+		Your browser dose not support canvas element.
+	</canvas>
+</body>
+</html>

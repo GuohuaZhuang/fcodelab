@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>furthest points visual page</title>
+	<style type="text/css" media="screen">
+	body {
+		text-align: center;
+	}
+	.canvas_panel {
+		width: 400;
+		height: 800;
+	}
+	</style>
+	<script type="text/javascript" charset="utf-8">
+	function POINT(x, y) {
+		this.x = x; this.y = y;
+	}
+	function replaceAll(txt, replace, with_this) {
+		return txt.replace(new RegExp(replace, 'g'),with_this);
+	}
+	function init() {
+	}
+	function readpoints() {
+		var _points = document.getElementById('points');
+		var textpoints = _points.value;
+		textpoints = textpoints.replace(new RegExp('\\(', 'g'), '');
+		textpoints = textpoints.replace(new RegExp('\\)', 'g'), '');
+		textpoints = textpoints.replace(new RegExp(',', 'g'), ' ');
+		var linepoints = textpoints.split("\n");
+		var points = new Array();
+		for (var i = 0; i < linepoints.length; i ++) {
+			var linepoint = linepoints[i].split(" ");
+			if (linepoint.length != 2) { continue; }
+			points.push(new POINT(linepoint[0], linepoint[1]));
+		}
+		return points;
+	}
+	function readlines() {
+		var _lines = document.getElementById('lines');
+		var textlines = _lines.value;
+		textlines = textlines.replace(new RegExp('\\(', 'g'), '');
+		textlines = textlines.replace(new RegExp('\\)', 'g'), '');
+		textlines = textlines.replace(new RegExp(',', 'g'), ' ');
+		var linelines = textlines.split("\n");
+		var lines = new Array();
+		for (var i = 0; i < linelines.length; i ++) {
+			var linepoint = linelines[i].split(" ");
+			if (linepoint.length != 2) { continue; }
+			lines.push(new POINT(linepoint[0], linepoint[1]));
+		}
+		return lines;
+	}
+	function paint() {
+		var points = readpoints();
+		var lines = readlines();
+		var panel = document.getElementById('panel');
+		var context = panel.getContext('2d');
+		context.beginPath();
+		context.fillStyle = 'blue';
+		for (var i = 0; i < points.length; i ++) {
+			context.arc(points[i].x*10, points[i].y*10, 1, 0, Math.PI*2, true);
+		}
+		context.closePath();
+		context.fill();
+		context.beginPath();
+		context.fillStyle = 'rgba(0,0,0,0.1)';
+//		context.fillStyle = '#8B2323';
+//		for (var i = 0; i < points.length; i ++) {
+//			context.fillText("("+points[i].x+","+points[i].y+")", points[i].x*10, points[i].y*10+10);
+//		}
+		console.log(lines.length);
+		console.log(points.length);
+		if (lines.length > 0) { context.moveTo(lines[0].x*10, lines[0].y*10); }
+		for (var i = 1; i < lines.length; i ++) {
+			context.lineTo(lines[i].x*10,lines[i].y*10);
+		}
+		// DEBUG
+		/// context.moveTo(1*10, 0*10); context.lineTo(19*10, 16*10);
+		/// context.moveTo(14*10, 19*10); context.lineTo(16*10, 1*10);
+		var diameter_a = new POINT(1, 0);
+		var diameter_b = new POINT(19, 16);
+		var diameter_center = new POINT((diameter_a.x+diameter_b.x)/2, (diameter_a.y+diameter_b.y)/2);
+		var radius = Math.sqrt(Math.pow(diameter_center.x-diameter_a.x, 2) + Math.pow(diameter_center.y-diameter_a.y, 2));
+		context.moveTo(diameter_a.x*10, diameter_a.y*10);
+		context.lineTo(diameter_b.x*10, diameter_b.y*10);
+		context.stroke();
+		context.closePath();
+		context.fill();
+		context.beginPath();
+		context.fillStyle = 'rgba(f,0,0,0.1)';
+		context.arc(diameter_center.x*10, diameter_center.y*10, radius*10, 0, Math.PI*2, true);
+		// ENDDEBUG
+		context.stroke();
+
+		context.closePath();
+		context.fill();
+		showcanvas();
+	}
+	function showcanvas() {
+		var inputdiv = document.getElementById('inputdiv');
+		var panel = document.getElementById('panel');
+		inputdiv.style.display = 'none';
+		panel.style.display = 'block';
+	}
+	</script>
+</head>
+
+<body onload="init()">
+	<div id="inputdiv">
+		<textarea id="points" name="points" rows="20" cols="40">
+(3,6)
+(17,15)
+(13,15)
+(6,12)
+(9,1)
+(2,7)
+(10,19)
+(3,6)
+(0,6)
+(12,16)
+(11,8)
+(7,9)
+(2,10)
+(2,3)
+(7,15)
+(9,2)
+(2,18)
+(9,7)
+(13,16)
+(11,2)
+(9,13)
+(1,19)
+(4,17)
+(18,4)
+(15,10)
+(13,6)
+(11,0)
+(16,13)
+(2,10)
+(16,1)
+(5,5)
+(4,7)
+(16,5)
+(6,9)
+(13,17)
+(4,15)
+(2,5)
+(14,7)
+(14,4)
+(3,10)
+(7,8)
+(16,18)
+(8,4)
+(3,11)
+(14,19)
+(12,0)
+(16,8)
+(19,12)
+(6,6)
+(14,19)
+(15,10)
+(14,18)
+(7,1)
+(17,2)
+(17,12)
+(12,16)
+(1,0)
+(6,1)
+(5,9)
+(4,19)
+(0,9)
+(11,17)
+(17,11)
+(1,15)
+(9,7)
+(7,16)
+(17,13)
+(6,5)
+(6,3)
+(19,4)
+(8,11)
+(12,9)
+(3,19)
+(10,8)
+(8,15)
+(0,9)
+(16,3)
+(18,5)
+(6,11)
+(1,15)
+(19,8)
+(4,8)
+(1,10)
+(13,0)
+(14,4)
+(4,14)
+(7,16)
+(3,11)
+(7,5)
+(19,16)
+(12,11)
+(17,8)
+(15,7)
+(14,1)
+(18,15)
+(9,17)
+(15,13)
+(18,8)
+(3,11)
+(8,9)</textarea><br/>
+		<button onclick="paint()">paint</button><br/>
+		<textarea id="lines" name="lines" rows="8" cols="40">
+(16,1)
+(17,2)
+(19,4)
+(19,16)
+(16,18)
+(14,19)
+(1,19)
+(0,9)
+(0,6)
+(1,0)
+(13,0)</textarea>
+	</div>
+	<canvas id="panel" class="canvas_panel" style="display:none" width="400" height="800">
+		Your browser dose not support canvas element.
+	</canvas>
+</body>
+</html>
