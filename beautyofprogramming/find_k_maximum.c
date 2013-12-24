@@ -135,6 +135,10 @@ void quicksort_use_middle_pivot(NUMBER* array, NUMBER left, NUMBER right) {
 
 /**
 * @brief use for heapsort to adjust a heap sort ordered from start to end.
+* Note the start minimum is from 1, not 0, but the array minimum index is 0, 
+* so there are so many +(-1) when access the array element.
+* Note this heap adjust is a maximum heap, if you want use minimum heap, use
+* minheapadjust instead.
 *
 * @param array array point.
 * @param start start index.
@@ -145,6 +149,27 @@ void heapadjust(NUMBER* array, NUMBER start, NUMBER end) {
 	for (j = start * 2; j <= end; j *= 2) {
 		if (j < end && array[j+(-1)] < array[j+1+(-1)]) { j ++; }
 		if (preroot >= array[j+(-1)]) break;
+		array[start+(-1)] = array[j+(-1)]; start = j;
+	}
+	array[start+(-1)] = preroot;
+}
+
+/**
+* @brief use for heapsort to adjust a heap sort ordered from start to end.
+* Note the start minimum is from 1, not 0, but the array minimum index is 0, 
+* so there are so many +(-1) when access the array element.
+* Note this heap adjust is a minimum heap, if you want use maximum heap, use
+* heapadjust instead.
+*
+* @param array array point.
+* @param start start index.
+* @param end end index.
+*/
+void minheapadjust(NUMBER* array, NUMBER start, NUMBER end) {
+	NUMBER j = 0, preroot = array[start+(-1)];
+	for (j = start * 2; j <= end; j *= 2) {
+		if (j < end && array[j+(-1)] > array[j+1+(-1)]) { j ++; }
+		if (preroot <= array[j+(-1)]) break;
 		array[start+(-1)] = array[j+(-1)]; start = j;
 	}
 	array[start+(-1)] = preroot;
@@ -246,7 +271,7 @@ void quickpartsort_k_maximum(NUMBER* array, NUMBER length, NUMBER k) {
 /**
 * @brief a test case for use part sort to find k maximum.
 */
-void testcase_k_maximum_partsort() {
+void testcase_k_maximum_quickpartsort() {
 	NUMBER* array = init_test_array(TEST_ARRAY_LENGTH);
 	printf("array before sort:\n");
 	print_array(array, TEST_ARRAY_LENGTH, ", \n");
@@ -342,10 +367,77 @@ void testcase_k_maximum_binarysearch() {
 	release_test_array(array);
 }
 
+/**
+* @brief output k maximum in a heap array.
+*
+* @param heap heap array.
+* @param size heap array size.
+*/
+void output_k_maximum_heap(NUMBER* heap, NUMBER size) {
+	if (!heap || size <= 0) { return; }
+	while (size --) {
+		printf(NF"\n", heap[size]);
+	}
+}
+
+/**
+* @brief use heap sort to find k maximum.
+*
+* @param array array.
+* @param length array length.
+* @param k k maximum count.
+*
+* @return heap array. Note you should free it memory outside.
+*/
+NUMBER* heapsort_k_maximum(NUMBER* array, NUMBER length, NUMBER k) {
+	if (!array || length <= 0 || k <= 0) {
+		printf("[ERR] -- heapsort_k_maximum input invalid!\n");
+		return NULL;
+	}
+	NUMBER* heap = (NUMBER*) malloc(sizeof(NUMBER) * k);
+	NUMBER heap_size = 0, i = 0;
+	for (i = 0; i < length; i ++) {
+		if (heap_size < k) {
+			heap[heap_size] = heap[1+(-1)];
+			heap[1+(-1)] = array[i];
+			heap_size ++;
+			if (k == heap_size) { // heap is full to adjust it
+				NUMBER j = 0;
+				for (j = k/2; j > 0; j --) { minheapadjust(heap, j, k); }
+			}
+			continue;
+		}
+		if (heap[0] < array[i]) {
+			heap[0] = array[i];
+			minheapadjust(heap, 1, k);
+		}
+	}
+	return heap;
+}
+
+/**
+* @brief test case for use heap sort to find k maximum.
+*/
+void testcase_k_maximum_heapsort() {
+	NUMBER* array = init_test_array(TEST_ARRAY_LENGTH);
+	printf("array before sort:\n");
+	print_array(array, TEST_ARRAY_LENGTH, ", \n");
+	printf("==============\n\n");
+
+	NUMBER* heap = heapsort_k_maximum(array, TEST_ARRAY_LENGTH, TEST_K);
+
+	printf("output_k_maximum %d:\n", TEST_K);
+	output_k_maximum_heap(heap, TEST_K);
+	printf("==============\n\n");
+	free(heap);
+	release_test_array(array);
+}
+
 int main(int argc, const char *argv[])
 {
 //	testcase_k_maximum_after_sortall();
-//	testcase_k_maximum_partsort();
-	testcase_k_maximum_binarysearch();
+//	testcase_k_maximum_quickpartsort();
+//	testcase_k_maximum_binarysearch();
+	testcase_k_maximum_heapsort();
 	return 0;
 }
