@@ -155,6 +155,28 @@ int point_inside_triangle_use_crossproduct(POINT A, POINT B, POINT C, POINT D) {
 		&& crossproduct(C, A, D) >= 0);
 }
 
+/////////////////////////EXtended Problems//////////////////////////////////////
+// 1. If do not want include the point in the edge of triangle as inside it,
+// then just remove the equal of crossproduct.
+// 2. If want to judge one point whether inside a convex polygon, the same 
+// method use cross product sign to determine it. You should just find the right
+// order of convex polygon vertices.
+// 3. If want to judge one point whether inside a not-self-intersect polygon, 
+// the simple i found is to find the closest edge in this polygon, and found 
+// the direction of it, the closest is just calculate the minimum of vertical
+// distance, and two endpoint distance. Then use cross product sign again.
+// 4. How to judge one point whether in a tetrahedron? We know a tetrahedron has
+// 6 flats, we can put the point's 6 projection one every flat, and then judge 
+// the point whether inside a 2-dimensional quadrilateral is easy use problem 3
+// method. You should just calculate the projection with a point and a flat.
+// We know a flat formula is Ax + By + Cz + D = 0, and suppose the point is 
+// M1(x1, y1, z2), then we want the projection M2(x2, y2, z2), we found that:
+//     (x1-x2, y1-y2, z1-z2) = k * (A, B, C)
+// the (A, B, C) is the normals vector of the flat. And we have:
+//     Ax2 + By2 + Cz2 + D = 0
+// So, just calculate it, then we can get the M2(x2, y2, z2) and k value.
+////////////////////////////////////////////////////////////////////////////////
+
 int main(int argc, const char *argv[])
 {
 	POINT A = {-5, -1}, B = {8, 2}, C = {4, 10}, D = {3, 6};
