@@ -55,16 +55,16 @@ int g_possiblenumbers[9] = {4, 2, 4, 2, 1, 2, 4, 2, 4};
 * @return return 1 means has the repeat numbers, otherwise return 0 means none
 * repeat number, all numbers are unique.
 */
-int has_repeat_digial(const int* digitals, const int size) {
-	int* bits = (int*) malloc(sizeof(int) * size);
-	memset(bits, 0, sizeof(int) * size);
+int has_repeat_digial(int possibles[][9], const int* digitals, const int size) {
+	int* bits = (int*) malloc(sizeof(int) * 10);
+	memset(bits, 0, sizeof(int) * 10);
 	int i = 0;
 	for (i = 0; i < size; i ++) {
-		if (bits[g_possibledigitals[i][digitals[i]] - 1] > 0) {
+		if (bits[possibles[i][digitals[i]]] > 0) {
 			free(bits);
 			return 1;
 		}
-		bits[g_possibledigitals[i][digitals[i]] - 1] = 1;
+		bits[possibles[i][digitals[i]]] = 1;
 	}
 	free(bits);
 	return 0;
@@ -76,10 +76,11 @@ int has_repeat_digial(const int* digitals, const int size) {
 * @param digitals digitals.
 * @param size digitals size.
 */
-void output_digitalcharade(const int* digitals, const int size) {
+void output_result(int possibles[][9], 
+	const int* digitals, const int size) {
 	int i = 0;
 	for (i = 0; i < size; i ++) {
-		printf("%d", g_possibledigitals[i][digitals[i]]);
+		printf("%d", possibles[i][digitals[i]]);
 	}
 	printf("\n");
 }
@@ -93,7 +94,7 @@ void output_digitalcharade(const int* digitals, const int size) {
 * @return return 1 if success, otherwise return 0 means invalid charades.
 */
 int digitalcharade_varification(const int* digitals, const int size) {
-	if (has_repeat_digial(digitals, size)) { return 0; }
+	if (has_repeat_digial(g_possibledigitals, digitals, size)) { return 0; }
 	int num = 0, i = 0;
 	for (i = 0; i < size; i ++) {
 		num = (num * 10 + g_possibledigitals[i][digitals[i]]);
@@ -113,7 +114,7 @@ void testcase_digitalcharades() {
 	int k = 0;
 	while (k < size) {
 		if (digitalcharade_varification(digitals, size)) {
-			output_digitalcharade(digitals, size);
+			output_result(g_possibledigitals, digitals, size);
 		}
 		k = 0;
 		while (k < size) {
@@ -125,8 +126,91 @@ void testcase_digitalcharades() {
 	}
 }
 
+/**
+* @brief global possible palindromes.
+*/
+int g_possiblepalindromes[6][9] = {
+	{1, 2, 3, 4, 5, 6, 7, 8, 9}, 
+	{1, 2, 3, 4, 5, 6, 7, 8, 9}, 
+	{1, 2, 3, 4, 5, 6, 7, 8, 9}, 
+	{1, 2, 3, 4, 5, 6, 7, 8, 9}, 
+	{1, 2, 3, 4, 5, 6, 7, 8, 9}, 
+	{2, 3, 4, 5, 6, 7, 8, 9}
+};
+
+/**
+* @brief global possible numbers of palindromes.
+*/
+int g_palindromenumbers[6] = {9, 9, 9, 9, 9, 8};
+
+/**
+* @brief digital palindrome varification whether is ok.
+*
+* @param digitals digitals.
+* @param size digitals size.
+*
+* @return return 1 if success, otherwise return 0 means invalid palindromes.
+*/
+int palindrome_varification(const int* digitals, const int size) {
+	if (has_repeat_digial(g_possiblepalindromes, digitals, size)) { return 0; }
+	int num = 0, i = 0, value = 0;
+	for (i = 0; i < size-1; i ++) {
+		num = (num * 10 + g_possiblepalindromes[i][digitals[i]]);
+		value = (value * 10 
+			+ g_possiblepalindromes[size-2-i][digitals[size-2-i]]);
+	}
+	if (num * g_possiblepalindromes[size-1][digitals[size-1]] 
+		== value) {
+		return 1;
+	}
+	return 0;
+}
+
+/**
+* @brief output digital charades.
+*
+* @param digitals digitals.
+* @param size digitals size.
+*/
+void output_result_palindrom(int possibles[][9], 
+	const int* digitals, const int size) {
+	int i = 0;
+	for (i = 0; i < size-1; i ++) {
+		printf("%d", possibles[i][digitals[i]]);
+	}
+	printf(" * %d = ", possibles[size-1][digitals[size-1]]);
+	for (i = size-2; i >= 0; i --) {
+		printf("%d", possibles[i][digitals[i]]);
+	}
+	printf("\n");
+}
+
+/**
+* @brief test case for palindromes.
+* The problem is to find the digital as "人过大佛寺*我 == 寺佛大过人" palindrom.
+* Every Chinese character represent a digital from 1 to 9.
+*/
+void testcase_palindromes() {
+	int digitals[6] = {0};
+	int size = sizeof(digitals) / sizeof(digitals[0]);
+	int k = 0;
+	while (k < size) {
+		if (palindrome_varification(digitals, size)) {
+			output_result_palindrom(g_possiblepalindromes, digitals, size);
+		}
+		k = 0;
+		while (k < size) {
+			if (digitals[k] < g_palindromenumbers[k]-1) {
+				digitals[k] ++; break;
+			}
+			digitals[k] = 0; k ++;
+		}
+	}
+}
+
 int main(int argc, const char *argv[])
 {
-	testcase_digitalcharades();
+//	testcase_digitalcharades();
+	testcase_palindromes();
 	return 0;
 }
