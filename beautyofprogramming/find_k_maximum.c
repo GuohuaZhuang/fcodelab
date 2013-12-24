@@ -182,8 +182,10 @@ void output_k_maximum(NUMBER* array, NUMBER length, NUMBER k) {
 	}
 }
 
-int main(int argc, const char *argv[])
-{
+/**
+* @brief a test case for general sort all element and then get k maximum.
+*/
+void testcase_k_maximum_after_sortall() {
 	NUMBER* array = init_test_array(TEST_ARRAY_LENGTH);
 	printf("array before sort:\n");
 	print_array(array, TEST_ARRAY_LENGTH, ", \n");
@@ -200,6 +202,68 @@ int main(int argc, const char *argv[])
 	output_k_maximum(array, TEST_ARRAY_LENGTH, TEST_K);
 	printf("==============\n\n");
 	release_test_array(array);
+}
 
+/**
+* @brief quick part sort to find k maximum.
+*
+* @param array array.
+* @param left quick sort left index.
+* @param right quick sort right index.
+* @param k k maximum count.
+*/
+void quickpartsort(NUMBER* array, NUMBER left, NUMBER right, NUMBER k) {
+	if (k <= 0 || left >= right) { return; }
+	NUMBER i = left, j = right, pivot = array[ (left+right)/2 ];
+	while (i <= j) {
+		while (array[j] > pivot) { j --; }
+		while (array[i] < pivot) { i ++; }
+		if (i <= j) {
+			if (i != j) { SWAP(array[i], array[j]) }
+			i ++, j --;
+		}
+	}
+	if (k >= right-i+1) {
+		if (left < j) { quickpartsort(array, left, j, k-(right-i+1)); }
+	} else {
+		if (right > i) { quickpartsort(array, i, right, k); }
+	}
+}
+
+/**
+* @brief quick part sort to find k maximum.
+*
+* @param array array.
+* @param length array length.
+* @param k k maximum count.
+*/
+void quickpartsort_k_maximum(NUMBER* array, NUMBER length, NUMBER k) {
+	quickpartsort(array, 0, length-1, k);
+}
+
+/**
+* @brief a test case for use part sort to find k maximum.
+*/
+void testcase_k_maximum_partsort() {
+	NUMBER* array = init_test_array(TEST_ARRAY_LENGTH);
+	printf("array before sort:\n");
+	print_array(array, TEST_ARRAY_LENGTH, ", \n");
+	printf("==============\n\n");
+
+	quickpartsort_k_maximum(array, TEST_ARRAY_LENGTH, TEST_K);
+	printf("array after sort:\n");
+	print_array(array, TEST_ARRAY_LENGTH, ", \n");
+	printf("==============\n\n");
+
+	printf("output_k_maximum %d:\n", TEST_K);
+	output_k_maximum(array, TEST_ARRAY_LENGTH, TEST_K);
+	printf("==============\n\n");
+	release_test_array(array);
+}
+
+int main(int argc, const char *argv[])
+{
+//	testcase_k_maximum_after_sortall();
+	testcase_k_maximum_partsort();
 	return 0;
 }
