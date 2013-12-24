@@ -433,11 +433,49 @@ void testcase_k_maximum_heapsort() {
 	release_test_array(array);
 }
 
+#include <string.h>
+
+/**
+* @brief test case for use base count array to find k maximum.
+* This case is not for test, it is just a demo for bit count array to show 
+* theroy how to storage the index as bit and count the k maximum.
+* It is not good in use small data set, but it may be useful in some huge data.
+* But malloc a big array in heap is not good advise.
+*/
+void testcase_k_maximum_basecount() {
+	NUMBER* array = init_test_array(TEST_ARRAY_LENGTH);
+	printf("array before sort:\n");
+	print_array(array, TEST_ARRAY_LENGTH, ", \n");
+	printf("==============\n\n");
+
+	// set bit array
+	char* bits = (char*) malloc(INT32_MAX);
+	memset(bits, 0, INT32_MAX);
+	NUMBER i = 0;
+	for (i = 0; i < TEST_ARRAY_LENGTH; i ++) { *(bits+array[i]) |= 0x01; }
+	
+	// find k maximum from maximum index
+	printf("output_k_maximum %d:\n", TEST_K);
+	NUMBER count = 0;
+	char* p = bits + (INT32_MAX-1);
+	for (; p >= bits; p --) {
+		if (0 != *(p)) {
+			if (count < TEST_K) { printf(NF"\n", (NUMBER)(p-bits)); count ++; }
+			else { break; }
+		}
+	}
+	printf("==============\n\n");
+	free(bits);
+	release_test_array(array);
+
+}
+
 int main(int argc, const char *argv[])
 {
 //	testcase_k_maximum_after_sortall();
 //	testcase_k_maximum_quickpartsort();
 //	testcase_k_maximum_binarysearch();
 	testcase_k_maximum_heapsort();
+//	testcase_k_maximum_basecount();
 	return 0;
 }
