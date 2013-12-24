@@ -31,6 +31,8 @@
 #define NF					"%010d"     // array element print format
 #define TEST_ARRAY_LENGTH	20          // test array length
 #define TEST_K				3			// k maximum
+#define NUM_MAX				INT32_MAX	// max number
+#define NUM_MIN				INT32_MIN	// min number
 
 /**
 * @brief prepare test array: initialize test array.
@@ -261,9 +263,89 @@ void testcase_k_maximum_partsort() {
 	release_test_array(array);
 }
 
+/**
+* @brief count the elements greater than given element.
+*
+* @param array array.
+* @param length array length.
+* @param x given number element.
+*
+* @return the count of elements greater than given element.
+*/
+NUMBER count_greaterthan_givenelement(NUMBER* array, NUMBER length, NUMBER x) {
+	NUMBER count = 0;
+	while (length --) {
+		if (array[length] >= x) { count ++; }
+	}
+	return count;
+}
+
+/**
+* @brief use binary search to find k maximum.
+*
+* @param array array.
+* @param length array size.
+* @param k k maximum count.
+*
+* @return the minimum number in k maximum numbers.
+*/
+NUMBER binarysearch_k_maximum(NUMBER* array, NUMBER length, NUMBER k) {
+	NUMBER vmax = NUM_MIN, vmin = NUM_MAX, vmid = 0;
+	NUMBER i = 0, count = 0;
+	for (i = 0; i < length; i ++) {
+		if (array[i] > vmax) { vmax = array[i]; }
+		if (array[i] < vmin) { vmin = array[i]; }
+	}
+	while (vmax > vmin) {
+		vmid = vmin + (vmax - vmin) / 2; // divided by 2
+		count = count_greaterthan_givenelement(array, length, vmid);
+		if (count > k) {
+			vmin = vmid;
+		} else if (count < k) {
+			vmax = vmid;
+		} else {
+			vmin = vmid; break;
+		}
+	}
+	return vmin;
+}
+
+/**
+* @brief output k maximum which less than a given number x.
+*
+* @param array array.
+* @param length array size.
+* @param x a given number.
+*/
+void output_k_maximum_lessthanx(NUMBER* array, NUMBER length, NUMBER x) {
+	while (length --) {
+		if (array[length] >= x) {
+			printf(NF"\n", array[length]);
+		}
+	}
+}
+
+/**
+* @brief test case for use binary search to find k maximum.
+*/
+void testcase_k_maximum_binarysearch() {
+	NUMBER* array = init_test_array(TEST_ARRAY_LENGTH);
+	printf("array before sort:\n");
+	print_array(array, TEST_ARRAY_LENGTH, ", \n");
+	printf("==============\n\n");
+
+	NUMBER x = binarysearch_k_maximum(array, TEST_ARRAY_LENGTH, TEST_K);
+
+	printf("output_k_maximum %d:\n", TEST_K);
+	output_k_maximum_lessthanx(array, TEST_ARRAY_LENGTH, x);
+	printf("==============\n\n");
+	release_test_array(array);
+}
+
 int main(int argc, const char *argv[])
 {
 //	testcase_k_maximum_after_sortall();
-	testcase_k_maximum_partsort();
+//	testcase_k_maximum_partsort();
+	testcase_k_maximum_binarysearch();
 	return 0;
 }
