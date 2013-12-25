@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 /**
 * @brief global possible digitals.
@@ -208,9 +209,77 @@ void testcase_palindromes() {
 	}
 }
 
+/**
+* @brief get palindrome count with given digital bit count.
+*
+* @param bit_count digital bit count.
+*
+* @return palindrome count.
+*/
+int palindrome_count(int bit_count) {
+	return (int)(9*pow(10, bit_count/2+(bit_count%2-1)));
+}
+
+/**
+* @brief test case for palindrome count.
+*/
+void testcase_palindrome_count() {
+	int i = 0;
+	for (i = 2; i < 10; i ++) {
+		printf("%d bit count have %d palindrome count.\n", i, 
+			palindrome_count(i));
+	}
+}
+
+#define NUM_CHAR(x) ( (x < 10) ? (x + '0') : (x - 10 + 'a') )
+
+/**
+* @brief output sh3she expression.
+*
+* @param he he value.
+* @param ary ary.
+*/
+void output_he2she(int he, int ary) {
+	int she = he*he;
+	printf("he2she ary(%d) is (%c%c)^2 = (%c%c%c)\n", ary, 
+		NUM_CHAR(he/ary), NUM_CHAR(he%ary), 
+		NUM_CHAR(she/ary/ary), NUM_CHAR(she/ary%ary), NUM_CHAR(she%ary));
+}
+
+/**
+* @brief output all possible he2she expression in given ary.
+*
+* @param ary ary.
+*/
+void he2she(int ary) {
+	int max = pow(ary, 3), h = 0, e = 0, he = 0, she = 0, mod = pow(ary, 2);
+	for (h = 1; h < ary; h ++) {
+		for (e = 0; e < ary; e ++) {
+			he = h*ary + e;
+			she = he*he;
+			if (she >= max) { return; }
+			if (she % mod == he) {
+				output_he2she(he, ary);
+			}
+		}
+	}
+}
+
+/**
+* @brief test case he2she expression.
+*/
+void testcase_he2she() {
+	int i = 0;
+	for (i = 3; i <= 16; i ++) {
+		he2she(i);
+	}
+}
+
 int main(int argc, const char *argv[])
 {
-//	testcase_digitalcharades();
+	testcase_digitalcharades();
 	testcase_palindromes();
+	testcase_palindrome_count();
+	testcase_he2she();
 	return 0;
 }
