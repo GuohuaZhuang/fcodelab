@@ -18,6 +18,17 @@
 /**
 * @file ant_climb_pole.c
 * @brief caculate all ant leave pole time.
+* Some extended problems:
+* 1. 从左边数起的第i只蚂蚁什么时候走出木杆？
+* 2. 所有蚂蚁从一开始到全部离开木杆共碰撞了多少次？
+* 3. 哪只蚂蚁的碰撞次数最多？
+* 4. 第k次碰撞发生在哪个时刻？哪个位置？哪两个蚂蚁之间？
+* 5. 如果不是一根木杆而是一个铁圈，经过一段时间后所有蚂蚁都会回到的状态吗？
+*    这个时间的上界是多少？
+* 6. 如果每只蚂蚁的速度不一样(这就有可能由于追赶而产生碰撞，此时根据动量守恒定
+*    律(速度互换)，上述扩展问题的答案是什么呢？
+* 7. 如果蚂蚁在一个平面上运动，同样也是碰头后原路返回(注意这不等同于两只蚂蚁交
+*    换继续前进)，问是否所有蚂蚁都能最终离开平面？
 * @author firstboy0513
 * @version 0.0.1
 * @date 2013-12-25
@@ -57,15 +68,160 @@ void get_extremum_leavetime(const int* positions, const int size,
 	*pminleave /= speed, *pmaxleave /= speed;
 }
 
-int main(int argc, const char *argv[])
-{
+typedef enum { LEFT, RIGHT } DIRECTOIN;
+
+/**
+* @brief get leave time of ant in the pole.
+*
+* @param positions ant initial position in the pole.
+* @param size ants count.
+* @param speed ant move speed.
+* @param pole pole length.
+* @param initdirections ant initial move directions.
+*
+* @return return every ant leave time, note you should release its memory 
+* outside.
+*/
+int* get_ant_leavetime(const int* positions, const int size, const int speed, 
+	const int pole, const int* initdirections) {
+	if (!positions || size <= 0 || speed <= 0 || pole <= 0 || !initdirections) {
+		printf("[ERR] -- get_ant_leavetime input invalid!\n");
+		return NULL;
+	}
+	int* leavetimes = (int*) malloc(sizeof(int) * size);
+	int i = 0, j = 0;
+	for (i = 0, j = i; j < size; j ++) {
+		if (initdirections[j] == LEFT) {
+			leavetimes[i++] = positions[j] / speed;
+		}
+	}
+	for (i = size-1, j = i; j >= 0; j --) {
+		if (initdirections[j] == RIGHT) {
+			leavetimes[i--] = pole-positions[j] / speed;
+		}
+	}
+	return leavetimes;
+}
+
+/**
+* @brief get collision times of ant in the pole.
+*
+* @param positions ant initial position in the pole.
+* @param size ants count.
+* @param speed ant move speed.
+* @param pole pole length.
+* @param initdirections ant initial move directions.
+*
+* @return return every ant collision times, note you should release its memory 
+* outside.
+*/
+int* get_ant_collisions(const int* positions, const int size, const int speed, 
+	const int pole, const int* initdirections) {
+	if (!positions || size <= 0 || speed <= 0 || pole <= 0 || !initdirections) {
+		printf("[ERR] -- get_ant_leavetime input invalid!\n");
+		return NULL;
+	}
+	int* collisiontimes = (int*) malloc(sizeof(int) * size);
+	int i = 0, j = 0, rightcount = 0, leftcount = 0;
+	// left leave all ants count
+	for (i = 0, j = i; j < size; j ++) {
+		if (initdirections[j] == LEFT) { i ++; }
+	}
+	// left collision times is twice of right count and add 1 right self
+	for (j = 0; j < i; j ++) {
+		collisiontimes[j] = rightcount * 2;
+		if (initdirections[j] == RIGHT) {
+			collisiontimes[j] ++; rightcount ++;
+		}
+	}
+	// right leave all ants count
+	for (i = size-1, j = i; j >= 0; j --) {
+		if (initdirections[j] == RIGHT) { i --; }
+	}
+	// right collision times is twice of left count and add 1 left self
+	for (j = size-1; j > i; j --) {
+		collisiontimes[j] = leftcount * 2;
+		if (initdirections[j] == LEFT) {
+			collisiontimes[j] ++; leftcount ++;
+		}
+	}
+	return collisiontimes;
+}
+
+/**
+* @brief test case for all ant extremum leave times.
+*/
+void testcase_all_ant_extremum_leavetime() {
 	const int ants_position[] = {3, 7, 11, 17, 23};
 	const int ants_count = sizeof(ants_position) / sizeof(ants_position[0]);
 	const int pole_length = 27;
+
 	int min_leavetime = 0, max_leavetime = 0;
 	get_extremum_leavetime(ants_position, ants_count, 1, pole_length,
 		&min_leavetime, &max_leavetime);
 	printf("min_leavetime = %d, max_leavetime = %d\n", 
 		min_leavetime, max_leavetime);
+}
+
+/**
+* @brief test case for every ant leave time.
+*/
+void testcase_every_ant_leavetime() {
+	const int ants_position[] = {3, 7, 11, 17, 23};
+	const int ants_count = sizeof(ants_position) / sizeof(ants_position[0]);
+	const int pole_length = 27;
+
+	int i = 0;
+	const int ants_initdirections[] = {RIGHT, RIGHT, RIGHT, LEFT, LEFT};
+	int* leavetimes = get_ant_leavetime(ants_position, ants_count, 1, 
+		pole_length, ants_initdirections);
+	if (leavetimes) {
+		printf("every ant leave time is \"index(leave time)\":\n");
+		for (i = 0; i < ants_count; i ++) {
+			if (0 != i) { printf(", "); }
+			printf("%d(%d)", i, leavetimes[i]);
+		}
+		printf("\n");
+	}
+	free(leavetimes);
+}
+
+/**
+* @brief test case for ant collision times.
+*/
+void testcase_ant_collisiontimes() {
+	const int ants_position[] = {3, 7, 11, 17, 23};
+	const int ants_count = sizeof(ants_position) / sizeof(ants_position[0]);
+	const int pole_length = 27;
+
+	int i = 0;
+	int total_collision_count = 0, max_collision_count = 0;
+	const int ants_initdirections[] = {RIGHT, RIGHT, RIGHT, LEFT, LEFT};
+	int* collisiontimes = get_ant_collisions(ants_position, ants_count, 1, 
+		pole_length, ants_initdirections);
+	if (collisiontimes) {
+		printf("every ant collision times is \"index(collision times)\":\n");
+		for (i = 0; i < ants_count; i ++) {
+			if (0 != i) { printf(", "); }
+			printf("%d(%d)", i, collisiontimes[i]);
+			total_collision_count += collisiontimes[i];
+			if (max_collision_count < collisiontimes[i]) {
+				max_collision_count = collisiontimes[i];
+			}
+		}
+		printf("\n");
+	}
+	total_collision_count /= 2;
+	printf("max_collision_count = %d, total_collision_count = %d\n", 
+		max_collision_count, total_collision_count);
+	free(collisiontimes);
+}
+
+int main(int argc, const char *argv[])
+{
+	testcase_all_ant_extremum_leavetime(); printf("\n");
+	testcase_every_ant_leavetime(); printf("\n");
+	testcase_ant_collisiontimes(); printf("\n");
+
 	return 0;
 }
