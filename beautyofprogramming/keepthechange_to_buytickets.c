@@ -30,6 +30,7 @@
 * @brief catalan number.
 *
 * @param N given input n.
+* @param cache store catalan value array.
 *
 * @return catalan value.
 */
@@ -38,9 +39,27 @@ int catalan(int N, int* cache) {
 	if (cache[N-1] > 0) { return cache[N-1]; }
 	int i = 0, sum = 0, n = N/2;
 	for (i = 0; i < n; i ++) {
-		sum += catalan(2*i, cache) * catalan(2*(n - i -1), cache);
+		sum += catalan(2*i, cache) * catalan(2*(n-i-1), cache);
 	}
 	cache[N-1] = sum;
+	return sum;
+}
+
+/**
+* @brief catalen number use recurrence.
+*
+* @param n given input Cn n, not the f(2n).
+* @param cache store catalan value array.
+*
+* @return catalan value.
+*/
+int catalan_recurrence(int n, int* cache) {
+	if (0 == n) { cache[0] = 1; return 1; }
+	int i = 0, sum = 0;
+	for (i = 0; i < n; i ++) {
+		sum += cache[i] * cache[(n-i-1)];
+	}
+	cache[n] = sum;
 	return sum;
 }
 
@@ -54,6 +73,16 @@ void testcase_catalan() {
 	printf("There are %d order to buy tickets when N = %d.\n", 
 		catalan(2*N, cache), N);
 	free(cache);
+
+	N = 19;
+	int* cache2 = (int*) malloc(sizeof(int) * N * 2);
+	memset(cache2, 0, sizeof(int) * N * 2);
+	int i = 0;
+	for (i = 0; i <= N; i ++) {
+		printf("There are %d order to buy tickets when N = %d.\n", 
+			catalan_recurrence(i, cache2), i);
+	}
+	free(cache2);
 }
 
 int main(int argc, const char *argv[])
