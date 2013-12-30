@@ -25,6 +25,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define HALF_BITS_LENGTH 4
+#define FULL_MASK 255
+#define RMASK (FULL_MASK >> HALF_BITS_LENGTH)
+#define LMASK (FULL_MASK << HALF_BITS_LENGTH)
+#define RSET(b, n) ((b) = ((LMASK & (b)) | (n)))
+#define LSET(b, n) ((b) = ((RMASK & (b)) | ((n) << HALF_BITS_LENGTH)))
+#define RGET(b) (RMASK & (b))
+#define LGET(b) ((LMASK & (b)) >> HALF_BITS_LENGTH)
+#define GRIDWIDTH 3
+
+/**
+* @brief output all generals valid postions use bit mask.
+*/
+void output_all_generals_valid_positions_use_mask() {
+	unsigned char b = 0;
+	for (LSET(b, 1); LGET(b) <= GRIDWIDTH*GRIDWIDTH; LSET(b, LGET(b)+1)) {
+		for (RSET(b, 1); RGET(b) <= GRIDWIDTH*GRIDWIDTH; RSET(b, RGET(b)+1)) {
+			if (LGET(b)%GRIDWIDTH != RGET(b)%GRIDWIDTH) {
+				printf("A = %d, B = %d\n", LGET(b), RGET(b));
+			}
+		}
+	}
+}
+
 /**
 * @brief output all generals valid postions use all range from 1 to 9*9.
 */
@@ -61,7 +85,8 @@ void output_all_generals_valid_positions() {
 
 int main(int argc, const char *argv[])
 {
-	output_all_generals_valid_positions_use_allrange();
+	output_all_generals_valid_positions_use_mask();
+	// output_all_generals_valid_positions_use_allrange();
 	// output_all_generals_valid_positions();
 	return 0;
 }
