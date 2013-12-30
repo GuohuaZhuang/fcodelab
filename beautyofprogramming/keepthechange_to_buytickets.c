@@ -18,6 +18,14 @@
 /**
 * @file keepthechange_to_buytickets.c
 * @brief solve the keep the change to buy tickets order count problem.
+* This is a catalan number problem.
+* Reference: http://en.wikipedia.org/wiki/Catalan_number
+* We can found two classical formula:
+* Cn = (1/(n+1)) * (2n, n)
+* The (2n, n) is permutations and combinations.
+* Cn = (2n, n) - (2n, n-1) or Cn = (2n, n) - (2n, n+1)
+* You know (2n, n-1) is equal to (2n, n+1)
+* Cn = sum(Ci*C(n-i-1)), i is from 0 to n-1.
 * @author firstboy0513
 * @version 0.0.1
 * @date 2013-12-27
