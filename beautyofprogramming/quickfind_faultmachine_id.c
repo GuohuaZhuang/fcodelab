@@ -87,6 +87,51 @@ void testcase_find_2backup_one_id_use_sum(const int* idlist, const int size,
 	printf("one fault machine (method sum) id = %d\n", sum);
 }
 
+/**
+* @brief find 2 backup one fault machine id and filter two value by bit.
+*
+* @param idlist id list.
+* @param size id list size.
+* @param bit bit value, just has only one 1bit.
+* @param pa output a point.
+* @param pb output b point.
+*/
+void find_2backup_one_faultmachine_id_filterbybit(
+	const int* idlist, const int size, int bit, int* pa, int* pb) {
+	if (!idlist || size <= 0 || !pa || !pb) {
+		return;
+	}
+	int i = 0;
+	for (i = 0; i < size; i ++) {
+		if (bit & idlist[i]) {
+			(*pa) ^= idlist[i];
+		} else {
+			(*pb) ^= idlist[i];
+		}
+	}
+}
+
+/**
+* @brief test case for find 2 backup tow id use xor.
+*
+* @param idlist id list.
+* @param size id list size.
+* @param sum origin id list sum.
+*/
+void testcase_find_2backup_two_id_use_xor(const int* idlist, const int size, 
+	int sum) {
+	int ids = find_2backup_one_faultmachine_id(idlist, size);
+	if (0 == ids) {                          // 2 id is the same id
+		int listsum = idlist_sum(idlist, size);
+		printf("two lost id is the same id = %d\n", (int)(((sum*2)-listsum)/2));
+	} else {                                 // 2 id is not the same id
+		int bit = (ids ^ (ids & (ids-1)));   // get first low 1 bit
+		int a = 0, b = 0;
+		find_2backup_one_faultmachine_id_filterbybit(idlist, size, bit, &a, &b);
+		printf("two lost id are id1 = %d, id2 = %d\n", a, b);
+	}
+}
+
 int main(int argc, const char *argv[])
 {
 	const int origin_idlist[] = {
@@ -101,6 +146,12 @@ int main(int argc, const char *argv[])
 
 	testcase_find_2backup_one_id_use_xor(idlist, size);
 	testcase_find_2backup_one_id_use_sum(idlist, size, sum);
+
+	const int idlist_lost2id[] = {
+		5, 23, 2, 5, 1, 92, 92, 1, 23, 2
+	};
+	const int lost2id_size = sizeof(idlist_lost2id) / sizeof(idlist_lost2id[0]);
+	testcase_find_2backup_two_id_use_xor(idlist_lost2id, lost2id_size, sum);
 
 	return 0;
 }
