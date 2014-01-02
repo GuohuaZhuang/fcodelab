@@ -27,7 +27,7 @@
 #include <stdint.h>
 
 /**
-* @brief find one fault machine id.
+* @brief find one fault machine id with 2 backup.
 * Be sure the idlist array must has just one fault machine!
 *
 * @param idlist all id list.
@@ -35,7 +35,7 @@
 *
 * @return return fault machine id.
 */
-int find_one_faultmachine_id(const int* idlist, const int size) {
+int find_2backup_one_faultmachine_id(const int* idlist, const int size) {
 	int i = 0, id = 0;
 	for (i = 0; i < size; i ++) {
 		id ^= idlist[i];
@@ -43,13 +43,64 @@ int find_one_faultmachine_id(const int* idlist, const int size) {
 	return id;
 }
 
+/**
+* @brief get sum of idlist ids value.
+*
+* @param idlist all id list.
+* @param size id list size.
+*
+* @return sum of idlist.
+*/
+int idlist_sum(const int* idlist, const int size) {
+	int i = 0, sum = 0;
+	for (i = 0; i < size; i ++) {
+		sum += idlist[i];
+	}
+	return sum;
+}
+
+/**
+* @brief test case for find one id use xor method with 2 backup.
+*
+* @param idlist all id list.
+* @param size id list size.
+*/
+void testcase_find_2backup_one_id_use_xor(const int* idlist, const int size) {
+	int id = find_2backup_one_faultmachine_id(idlist, size);
+	printf("one fault machine (method xor) id = %d\n", id);
+}
+
+/**
+* @brief test case for find one id use sum method with 2 backup.
+*
+* @param idlist all id list.
+* @param size id list size.
+* @param sum all id list sum.
+*/
+void testcase_find_2backup_one_id_use_sum(const int* idlist, const int size, 
+	int sum) {
+	sum *= 2;
+	int i = 0;
+	for (i = 0; i < size; i ++) {
+		sum -= idlist[i];
+	}
+	printf("one fault machine (method sum) id = %d\n", sum);
+}
+
 int main(int argc, const char *argv[])
 {
+	const int origin_idlist[] = {
+		1, 2, 5, 23, 34, 92
+	};
+	const int origin_size = sizeof(origin_idlist) / sizeof(origin_idlist[0]);
 	const int idlist[] = {
 		5, 23, 2, 5, 1, 34, 92, 23, 92, 1, 2
 	};
 	const int size = sizeof(idlist) / sizeof(idlist[0]);
-	int id = find_one_faultmachine_id(idlist, size);
-	printf("one fault machine id = %d\n", id);
+	const int sum = idlist_sum(origin_idlist, origin_size);
+
+	testcase_find_2backup_one_id_use_xor(idlist, size);
+	testcase_find_2backup_one_id_use_sum(idlist, size, sum);
+
 	return 0;
 }
