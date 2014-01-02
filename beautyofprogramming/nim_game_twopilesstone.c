@@ -143,6 +143,47 @@ int nim_game_twopilesstone_recurrence(int x, int y) {
 	free(cache); return 1;
 }
 
+/**
+* @brief nim game ton find next take strategy intelligence.
+* Pretreat to suppose x in the minimum number of x and y.
+* Then if (0 == x) means to get all y value turn result is x = 0, y = 0.
+* If (y - x == n) means meet the unsafety situation, any strategy is ok.
+* If (y - x == n1 < n) means find the value x1 = n1 * a, and y1 = x1 + n1.
+* If (y - x > n) means find the new n2 let x1 == n2 * a or x1 == n2 * b.
+*   If (x1 == n2 * a) then subtract y to y1 = x1 + n2;
+*   If (x2 == n2 * b) then subtract y to y1 = x1 - n2;
+* This method is belong to the Betti's theorem as a integer belong to 
+* {n*a|n belong to N} or {n*b|n belong to N}.
+*
+* @param px output x point.
+* @param py output y point.
+*/
+void nim_game_intelligent_next_takestrategy(int* px, int* py) {
+	if (!px || !py || *px < 0 || *py < 0) {
+		printf("[ERR] -- nim game next takestrategy input invalid!\n");
+		return ;
+	}
+	if ((*px) > (*py)) { SWAP_INT(*px, *py) }
+	if (0 == (*px)) { (*py) = 0; return; }
+	double a = (1.0 + sqrt(5))/2.0;
+	double b = (3.0 + sqrt(5))/2.0;
+	int subtract = (*py) - (*px);
+	int n = (int) ceil( (double) (*px) / a );
+	if (subtract == n) {					// the lose situation, any strategy
+		(*py) --;
+	} else if (subtract > n) {
+		if ((*px) == (int) floor(n * a)) {
+			(*py) = (*px) + n;
+		} else {
+			n = (int) ceil( (double) (*px) / b);
+			(*py) = (*px) - n;
+		}
+	} else {								// subtract < n
+		(*px) = (int) floor(subtract * a);
+		(*py) = (*px) + subtract;
+	}
+}
+
 int main(int argc, const char *argv[])
 {
 	int x = 12, y = 20;
@@ -150,6 +191,12 @@ int main(int argc, const char *argv[])
 		x, y, nim_game_twopilesstone_formula(x, y));
 	printf("nim_game_twopilesstone_recurrence(%d, %d) = %d\n", 
 		x, y, nim_game_twopilesstone_recurrence(x, y));
+
+	while (printf("input x and y split by blank: "), 
+			scanf("%d %d", &x, &y) == 2) {
+		nim_game_intelligent_next_takestrategy(&x, &y);
+		printf("next take strategy: x = %d, y = %d\n", x, y);
+	}
 
 	return 0;
 }
