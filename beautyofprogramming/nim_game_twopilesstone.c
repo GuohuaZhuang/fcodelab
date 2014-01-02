@@ -56,11 +56,100 @@ int nim_game_twopilesstone_formula(int x, int y) {
 	return ((x != (int)floor((y - x) * a)) ? 1 : 0);
 }
 
+/**
+* @brief add new number to cache, and realloc memory if cache capacity is not 
+* enough to store cache numbers.
+*
+* @param cache cache array.
+* @param psize output cache size.
+* @param pcapacity output cache capacity size.
+* @param num given a new number to add in.
+*
+* @return return cache array.
+*/
+int* cache_add_new_number(int* cache, int* psize, int* pcapacity, int num) {
+	(*psize) ++;
+	if (*psize >= *pcapacity) {
+		*pcapacity <<= 1;
+		cache = (int*)realloc(cache, sizeof(int)*(*pcapacity));
+	}
+	cache[(*psize)-1] = num;
+	return cache;
+}
+
+/**
+* @brief get minimum blank number from a+1 in cache.
+*
+* @param cache cache array.
+* @param psize output cache size point.
+* @param a find the number not less than a.
+*
+* @return return the minimum blank number in cache.
+*/
+int cache_get_min_blank_number(int* cache, int* psize, int a) {
+	if (0 == a) { return 1; }
+	if (++a < cache[0]) { return a; }           // not subtract any
+	int i = 0, j = 0;
+	do {
+		if (a != cache[i]) { break; }
+		a ++;
+	} while (++i < (*psize));
+
+	int subtract = i;                           // subtract all or middle part
+	if (i != (*psize)) {
+		for (j = 0; i < (*psize); i ++, j ++) { cache[j] = cache[i]; }
+	}
+	(*psize) -= subtract;
+	return a;
+}
+
+/**
+* @brief output cache just for debug.
+*
+* @param cache cache array.
+* @param size cache size.
+*/
+void output_cache(const int* cache, const int size) {
+	int i = 0;
+	for (i = 0; i < size; i ++) {
+		if (0 != i) { printf(", "); }
+		printf("%d", cache[i]);
+	}
+	printf("\n");
+}
+
+/**
+* @brief Give nim game of two piles of stone count, to judge whether the first 
+* person take stone will definitely win the game.
+* It use recurrence to find all unsafety stone count combines.
+*
+* @param x one pile stone count.
+* @param y another pile stone count.
+*
+* @return return 1 means the first person take the stone will definitely win 
+* the game, otherwise he will lose the game if another person is sane in 
+* theoretically.
+*/
+int nim_game_twopilesstone_recurrence(int x, int y) {
+	if (!x || !y || x == y) { return 1; }
+	if (x > y) { SWAP_INT(x,y) }
+	int* cache = (int*) malloc(sizeof(int) * 2);
+	int a = 0, b = 0, n = 0, size = 0, capacity = 2;
+	while ( (a = cache_get_min_blank_number(cache, &size, a)) && a <= x) {
+		b = a + (++n);
+		if (b == y && a == x) { free(cache); return 0; }
+		cache = cache_add_new_number(cache, &size, &capacity, b);
+	}
+	free(cache); return 1;
+}
+
 int main(int argc, const char *argv[])
 {
 	int x = 12, y = 20;
 	printf("nim_game_twopilesstone_formula(%d, %d) = %d\n", 
 		x, y, nim_game_twopilesstone_formula(x, y));
+	printf("nim_game_twopilesstone_recurrence(%d, %d) = %d\n", 
+		x, y, nim_game_twopilesstone_recurrence(x, y));
 
 	return 0;
 }
