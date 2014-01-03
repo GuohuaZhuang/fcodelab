@@ -55,9 +55,47 @@ int output_nim_lasttakewin_win_strategy(const int count, const int k) {
 	return 1;
 }
 
+/**
+* @brief judge and output first take win strategy is has definitely win the 
+* last take lose nim game.
+* [TODO]
+* Note if the situation has lose game, then return it, not calculate any more.
+* NOte get x/2 to reduce symmetry calculate.
+* Note store result in dynamic programming map to reduce calculate.
+*
+* @param situation situation of now stone location.
+*
+* @return return 1 means has definitely win the game, otherwise return 0 means
+* not definitely win the game, and also not any output.
+*/
+int recursion_get_lasttakelose_win_strategy(string situation,
+	map<string, int>& dp) {
+
+	map<string, int>::const_iterator it = dp.find(situation);
+	if (dp.end() != it) { return it->second; }
+
+	int definitely_win = 0;
+
+	// recurrence to take 2 consecutive stone
+
+	// recurrence to take 1 stone
+
+	// map["xx_xx"] = definitely_win;
+	
+	return definitely_win;
+}
+
 int main(int argc, const char *argv[])
 {
 	printf("nim last take win game will win strategy? %s\n", 
 		(output_nim_lasttakewin_win_strategy(10, 2) == 1 ? "yes" : "no"));
+
+	printf("\n");
+
+	map<string, int> dp;
+	printf("when stone count = %d, nim last take lose game %s strategy.\n", 7,
+		(recursion_get_lasttakelose_win_strategy("7", dp) 
+		 ? "will win" : "may lose") );
+
 	return 0;
 }
