@@ -184,19 +184,66 @@ void nim_game_intelligent_next_takestrategy(int* px, int* py) {
 	}
 }
 
+/**
+* @brief judge the number x whether is a fibonacci number.
+*
+* @param x the number x to be judge.
+*
+* @return return 1 means x is a fibonacci number, otherwise not.
+*/
+int is_a_fibonacci(int x) {
+	int a = 0, b = 1;
+	while (x > b) {
+		a += b;
+		SWAP_INT(a, b)
+	}
+	return (x == b ? 1 : 0);
+}
+
+/**
+* @brief The nim game 4 in beauty of programming book, also named as fibonacci
+* nim game. This method is use "Zeckendorf theorem" to know than every number
+* which is not the fibonacci will split as some unconsecutive fibonacci 
+* numbers. And use proof by contradiction method to prove the result.
+* When the count of the pile stone is a fibonacci number, then the first person
+* may lose nim game, otherwise if the count is not a fibonacci number, then he 
+* has will definitely win nim game by take from the lowest splited fibonacci 
+* number first, and also recurrence it.
+*
+* refereces:
+* 	http://blog.csdn.net/dgq8211/article/details/7602807
+* 	http://en.wikipedia.org/wiki/Zeckendorf%27s_theorem
+* 	http://zh.wikipedia.org/wiki/齊肯多夫定理
+* 	http://www.cis.umac.mo/~fstitl/2000-topics/fibonacci.html
+*
+* @param n the count of the pile stone.
+*
+* @return the first take stone person has definitely win the game or not.
+*/
+int fibonacci_nim(int n) {
+	return !is_a_fibonacci(n);
+}
+
 int main(int argc, const char *argv[])
 {
+	// test case for judge whether the first person will win
 	int x = 12, y = 20;
 	printf("nim_game_twopilesstone_formula(%d, %d) = %d\n", 
 		x, y, nim_game_twopilesstone_formula(x, y));
 	printf("nim_game_twopilesstone_recurrence(%d, %d) = %d\n", 
 		x, y, nim_game_twopilesstone_recurrence(x, y));
 
+	// test case for get nim next take strategy
 	while (printf("input x and y split by blank: "), 
 			scanf("%d %d", &x, &y) == 2) {
 		nim_game_intelligent_next_takestrategy(&x, &y);
 		printf("next take strategy: x = %d, y = %d\n", x, y);
 	}
+
+	// test case for fibonacci nim game
+	int n = 89;
+	printf("n = %d, fibonacci nim %s the game.\n", n,
+		(fibonacci_nim(n) ? "will win" : "may lose"));
 
 	return 0;
 }
