@@ -63,6 +63,9 @@ int output_nim_lasttakewin_win_strategy(const int count, const int k) {
 * NOte get x/2 to reduce symmetry calculate.
 * Note store result in dynamic programming map to reduce calculate.
 *
+* references:
+* 	http://arieshout.me/2012/04/nim-problem.html
+*
 * @param situation situation of now stone location.
 *
 * @return return 1 means has definitely win the game, otherwise return 0 means
