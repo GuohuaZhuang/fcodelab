@@ -1,7 +1,38 @@
+/* Copyright (C) 
+* 2014 - Not me, this program is from the book <Beauty of Programming>
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+* 
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+* 
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+* 
+*/
+/**
+* @file prefix_sorting.cpp
+* @brief sorting prefix reverse.
+* references:
+* 	http://www.cnblogs.com/avenxia/archive/2012/09/13/2683094.html
+* @author Not me, this program is from the book <Beauty of Programming>
+* @version 0.0.1
+* @date 2014-01-05
+*/
 #include <iostream>
 #include <cstdio>
 #include <cassert>
 
+/**
+* @brief This program is one solution of sorting prefix reverse problem, and 
+* this class CPrefixSorting implement code is from the book <Beauty of 
+* Programming>.
+*/
 class CPrefixSorting {
 public:
 
@@ -75,7 +106,7 @@ private:
 	* @brief 寻找当前翻转的上界
 	*/
 	int UpperBound(int nCakeCnt) {
-		return nCakeCnt * 2;
+		return (nCakeCnt-1) * 2;
 	}
 
 	/**
@@ -148,22 +179,60 @@ private:
 	}
 
 private:
-	int* m_CakeArray; // 烙饼信息数组
-	int m_nCakeCnt; // 烙饼个数
-	int m_nMaxSwap; // 最多交换次数。根据前面的推断，这里最多为m_nCakeCnt*2
-	int* m_SwapArray; // 交换结果数组
+	int* m_CakeArray;   // 烙饼信息数组
+	int m_nCakeCnt;     // 烙饼个数
+	int m_nMaxSwap;     // 最多交换次数。根据前面的推断，这里最多为m_nCakeCnt*2
+	int* m_SwapArray;   // 交换结果数组
 
-	int* m_ReverseCakeArray; // 当前翻转烙饼信息数组
+	int* m_ReverseCakeArray;     // 当前翻转烙饼信息数组
 	int* m_ReverseCakeArraySwap; // 当前翻转烙饼交换结果数组
-	int m_nSearch; // 当前搜索次数信息
+	int m_nSearch;               // 当前搜索次数信息
 };
 
 int main(int argc, const char *argv[])
 {
 	int pCakeArray[] = {3, 2, 1, 6, 5, 4, 9, 8, 7, 0};
 	int nCakeCnt = sizeof(pCakeArray) / sizeof(pCakeArray[0]);
+
+	// origin problem
 	CPrefixSorting ps;
 	ps.Run(pCakeArray, nCakeCnt);
 	ps.Output();
+
+	// extend problem 1
+	for (int i = 0; i < nCakeCnt; i ++) {
+		int left_max = 0, right_min = -1, i_max = 0, i_min = -1;
+		// find i_max in the left
+		for (int j = 0; j <= i; j ++) {
+			if (left_max < pCakeArray[j]) {
+				left_max = pCakeArray[j];
+				i_max = j;
+			}
+		}
+		// find i_min in the right
+		for (int j = i+1; j < nCakeCnt; j ++) {
+			if (right_min < 0 || right_min > pCakeArray[j]) {
+				right_min = pCakeArray[j];
+				i_min = j;
+			}
+		}
+		// sort the left and right part
+		if (pCakeArray[i_max] <= pCakeArray[i_min] || i_min == -1) {
+			printf("sort with two piles: i = %d, i_max = %d, i_min = %d\n", 
+				i, i_max, i_min);
+			if (i > 0) {
+				CPrefixSorting ps;
+				ps.Run(pCakeArray, i+1);
+				ps.Output();
+			}
+			if (i < nCakeCnt-1) {
+				CPrefixSorting ps;
+				ps.Run(&(pCakeArray[i+1]), nCakeCnt-i);
+				ps.Output();
+			}
+			break;
+		}
+	}
+
 	return 0;
 }
