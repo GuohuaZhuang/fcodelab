@@ -257,6 +257,9 @@ int mergesort_reversenumber(BOUNDARY* boundarys, const int left,
 * point is shared more than 2 lines.
 * You can also see the test lines plot in google:
 *   http://www.google.com/#newwindow=1&q=y%3D1.5x%2B1+and+y%3D2x%2B2+and+y+%3D+1
+* This method is use merge sort to calculate reverse number, it can also use 
+* interval tree algorithm to calculate it, though it use O(max-number) memory
+* complex, its time complex is also the same with merge sort method O(nlogn).
 *
 * @param lines lines.
 * @param size lines size.
