@@ -24,6 +24,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
 * @brief light line express as y=ax+b, we just store the argument a and b.
@@ -95,11 +96,13 @@ int lines_all_intersections(const LIGHT_LINE* lines, const int size,
 
 /**
 * @brief count points in x-axis interval.
+* Note that not include the point in the boundarys, as we just want to know how 
+* many plane area are split.
 *
 * @param points points.
 * @param size points count.
-* @param left left axis interval bound.
-* @param right right axis interval bound.
+* @param left left axis interval boundary.
+* @param right right axis interval boundary.
 *
 * @return return the count of points in x-axis interval.
 */
@@ -121,8 +124,8 @@ int pointscount_in_xaxis_interval(const INTERSECT_POINT* points, const int size,
 *
 * @param lines lines.
 * @param size lines size.
-* @param xA x-axis left bound.
-* @param xB x-axis right bound.
+* @param xA x-axis left boundary.
+* @param xB x-axis right boundary.
 *
 * @return return the split plane count in interval.
 */
@@ -136,15 +139,155 @@ int light_cutting_plane_count(const LIGHT_LINE* lines, const int size,
 	return (size + points_count_interval + 1);
 }
 
+/**
+* @brief projector in x-axis boundary of left and right.
+*/
+typedef struct _BOUNDARY {
+	double left;
+	double right;
+} BOUNDARY;
+
+/**
+* @brief get lines interval boundaryst.
+* Note the boundarys memory will be free outside.
+*
+* @param lines lines.
+* @param size lines size.
+* @param xA interval left boundary.
+* @param xB interval right boundary.
+*
+* @return return boundarys, if input invalid, return null.
+*/
+BOUNDARY* get_lines_interval_boundary(const LIGHT_LINE* lines, 
+	const int size, const double xA, const double xB) {
+	if (!lines || size <= 0) { return NULL; }
+	BOUNDARY* boundarys = (BOUNDARY*) malloc(sizeof(BOUNDARY) * size);
+	int i = 0;
+	for (i = 0; i < size; i ++) {
+		boundarys[i].left = lines[i].a * xA + lines[i].b;
+		boundarys[i].right = lines[i].a * xB + lines[i].b;
+	}
+	return boundarys;
+}
+
+#define BOUNDARY_GT(a, b) ( (a.left > b.left ? 1 :  \
+	(a.left == b.left ? (a.right > b.right) : 0)))
+#define SWAP_BOUNDARY(a, b) { BOUNDARY _t = a; a = b; b = _t; }
+
+/**
+* @brief quick sort the boundary use its left boundary value.
+* Note that if boundary left is equal, then compare right value, let if left 
+* start the same point, then do not to calculate one more intersection point.
+*
+* @param boundarys boundarys.
+* @param left quick sort left index.
+* @param right quick sort right index.
+*/
+void quicksort_boundary(BOUNDARY* boundarys, const int left, const int right) {
+	int i = left, j = right;
+	BOUNDARY pivot = boundarys[(left+right)/2];
+	while (i <= j) {
+		while (BOUNDARY_GT(boundarys[j], pivot)) { j --; }
+		while (BOUNDARY_GT(pivot, boundarys[i])) { i ++; }
+		if (i <= j) {
+			if (i != j) { SWAP_BOUNDARY(boundarys[i], boundarys[j]); }
+			j --, i ++;
+		}
+	}
+	if (left < j) { quicksort_boundary(boundarys, left, j); }
+	if (i < right) { quicksort_boundary(boundarys, i, right); }
+}
+
+/**
+* @brief merge the left ordered and right ordered to caculate reverse number.
+*
+* @param boundarys boundarys.
+* @param left boundarys left index.
+* @param mid boundarys middle index.
+* @param right boundarys right index.
+* @param tmp tmp array.
+*
+* @return reverse number.
+*/
+int merge_reversenumber(BOUNDARY* boundarys, const int left, const int mid, 
+	const int right, BOUNDARY* tmp) {
+	memcpy(tmp+left, boundarys+left, sizeof(BOUNDARY) * (right-left+1));
+	int i = left, j = mid+1, k = left, reversenumber = 0;
+	while (i <= mid && j <= right) {
+		if (tmp[i].right <= tmp[j].right) {
+			boundarys[k++] = tmp[i++];
+		} else {
+			boundarys[k++] = tmp[j++];
+			reversenumber += (mid-i+1);
+		}
+	}
+	if (i <= mid) {
+		memcpy(boundarys+k, tmp+i, sizeof(BOUNDARY) * (mid-i+1));
+	}
+	if (j <= right) {
+		memcpy(boundarys+k, tmp+j, sizeof(BOUNDARY) * (right-j+1));
+	}
+	return reversenumber;
+}
+
+/**
+* @brief merge sort to calculate reverse number.
+*
+* @param boundarys boundarys.
+* @param left boundary left index.
+* @param right boundary right index.
+* @param tmp tmp array.
+*
+* @return reverse number.
+*/
+int mergesort_reversenumber(BOUNDARY* boundarys, const int left,
+	const int right, BOUNDARY* tmp) {
+	if (right - left < 1) { return 0; }
+	int reversenumber = 0, mid = (left+right)/2;
+		reversenumber += mergesort_reversenumber(boundarys, left, mid, tmp);
+		reversenumber += mergesort_reversenumber(boundarys, mid+1, right, tmp);
+		reversenumber += merge_reversenumber(boundarys, left, mid, right, tmp);
+	return reversenumber;
+}
+
+/**
+* @brief caculate the count of split plane by lines in given x-axis interval 
+* use reverse number method.
+* Be sure that no lines parallel with y-axis, and also not any intersection 
+* point is shared more than 2 lines.
+* You can also see the test lines plot in google:
+*   http://www.google.com/#newwindow=1&q=y%3D1.5x%2B1+and+y%3D2x%2B2+and+y+%3D+1
+*
+* @param lines lines.
+* @param size lines size.
+* @param xA x-axis left boundary.
+* @param xB x-axis right boundary.
+*
+* @return return the split plane count in interval.
+*/
+int light_cutting_plane_count_use_reversenumber(const LIGHT_LINE* lines, 
+	const int size, const double xA, const double xB) {
+	BOUNDARY* boundarys = get_lines_interval_boundary(lines, size, xA, xB);
+	quicksort_boundary(boundarys, 0, size-1);
+	BOUNDARY* boundarys_copy = (BOUNDARY*) malloc(sizeof(BOUNDARY) * size);
+	int reversenumber = mergesort_reversenumber(boundarys, 0, size-1, 
+		boundarys_copy);
+	free(boundarys_copy); free(boundarys);
+	return (size + reversenumber + 1);
+}
+
 int main(int argc, const char *argv[])
 {
 	// x-axis interval from A to B, be sure A < B.
-	const double xA = -1.0, xB = 10.0;
+	const double xA = -2.0, xB = 1.0;
 	LIGHT_LINE lines[] = {{1.5, 1.0}, {0.0, 1.0}, {2.0, 2.0}};
 	const int lines_size = sizeof(lines) / sizeof(lines[0]);
 
 	int split_count = light_cutting_plane_count(lines, lines_size, xA, xB);
 	printf("split_count = %d\n", split_count);
+	split_count = light_cutting_plane_count_use_reversenumber(
+		lines, lines_size, xA, xB);
+	printf("split_count (use reverse number method) = %d\n", split_count);
 
 	return 0;
 }
