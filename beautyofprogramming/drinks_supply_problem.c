@@ -116,6 +116,67 @@ int best_satisfaction_solution(int* V, int* C, int* H, int* B, int size,
 	return best_satisfaction;
 }
 
+/**
+* @brief get best satisfaction solution of optimal matrix recursion sub method.
+*
+* @param V volume array of different type of drinks.
+* @param C constraints of drinks.
+* @param H satisfactions of drinks.
+* @param B the actual purchase amount of drinks.
+* @param size size of drinks.
+* @param totalV total volume.
+*
+* @return return best satisfaction, but not any actual purchase amount result.
+*/
+int best_satisfaction_solution_recursion(int* V, int* C, int* H, int* B, 
+	int size, int totalV, int** opt, int v, int t) {
+	if (t == size) {
+		if (v == 0) { return 0; }
+		else { return INT32_MIN; }
+	}
+	if (v < 0) {
+		return INT32_MIN;
+	} else if (v == 0) {
+		return 0;
+	} else if (opt[v][t] != INT32_MIN) {
+		return opt[v][t];
+	}
+	int ret = INT32_MIN;
+	int i = 0;
+	for (i = 0; i <= C[t]; i ++) {
+		int temp = best_satisfaction_solution_recursion(V, C, H, B, size, 
+			totalV, opt, v-V[t]*i, t+1);
+		if (INT32_MIN != temp) {
+			temp += H[t]*i;
+			if (ret < temp) { ret = temp; }
+		}
+	}
+	opt[v][t] = ret;
+	return ret;
+}
+
+/**
+* @brief get best satisfaction solution of optimal matrix use recursion.
+*
+* @param V volume array of different type of drinks.
+* @param C constraints of drinks.
+* @param H satisfactions of drinks.
+* @param B the actual purchase amount of drinks.
+* @param size size of drinks.
+* @param totalV total volume.
+*
+* @return return best satisfaction, but not any actual purchase amount result.
+*/
+int best_satisfaction_solution_use_recursion(int* V, int* C, int* H, int* B, 
+	int size, int totalV) {
+	int** opt = init_opt(totalV, size);
+	best_satisfaction_solution_recursion(V, C, H, B, size, totalV, opt, totalV,
+		0);
+	int best_satisfaction = opt[totalV][0];
+	release_opt(opt, totalV);
+	return best_satisfaction;
+}
+
 int main(int argc, const char *argv[])
 {
 	int V[N] = {2, 8, 32, 8, 64};
@@ -124,7 +185,9 @@ int main(int argc, const char *argv[])
 	int B[N] = {0, 0, 0, 0, 0};
 	int totalV = 256;
 
-	int satisfaction = best_satisfaction_solution(V, C, H, B, N, totalV);
+	// int satisfaction = best_satisfaction_solution(V, C, H, B, N, totalV);
+	int satisfaction = best_satisfaction_solution_use_recursion(
+		V, C, H, B, N, totalV);
 	printf("The best satisfaction solution is: ");
 	output_array(B, N);
 	printf("And its satisfaction = %d\n", satisfaction);
