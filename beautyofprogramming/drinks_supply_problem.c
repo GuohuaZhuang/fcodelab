@@ -1,9 +1,39 @@
+/* Copyright (C) 
+* 2014 - firstboy0513
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+* 
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+* 
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+* 
+*/
+/**
+* @file drinks_supply_problem.c
+* @brief drinks supply best satisfaction problem.
+* @author firstboy0513
+* @version 0.0.1
+* @date 2014-01-07
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
 #define N 5
 
+/**
+* @brief output array.
+*
+* @param X[] array X.
+* @param size array size.
+*/
 void output_array(int X[], int size) {
 	int i = 0;
 	for (i = 0; i < size; i ++) {
@@ -13,6 +43,14 @@ void output_array(int X[], int size) {
 	printf("\n");
 }
 
+/**
+* @brief initialtion optimal matrix.
+*
+* @param totalV total volume.
+* @param T all types count.
+*
+* @return return optimal matrix.
+*/
 int** init_opt(int totalV, int T) {
 	int** opt = (int**) malloc(sizeof(int*) * (totalV+1));
 	int i = 0, j = 0;
@@ -28,6 +66,12 @@ int** init_opt(int totalV, int T) {
 	return opt;
 }
 
+/**
+* @brief release optimal matrix.
+*
+* @param opt optimal matrix.
+* @param totalV total volume.
+*/
 void release_opt(int** opt, int totalV) {
 	int i = 0;
 	for (i = 0; i <= totalV; i ++) {
@@ -36,6 +80,18 @@ void release_opt(int** opt, int totalV) {
 	free(opt);
 }
 
+/**
+* @brief get best satisfaction solution of optimal matrix.
+*
+* @param V volume array of different type of drinks.
+* @param C constraints of drinks.
+* @param H satisfactions of drinks.
+* @param B the actual purchase amount of drinks.
+* @param size size of drinks.
+* @param totalV total volume.
+*
+* @return return best satisfaction, but not any actual purchase amount result.
+*/
 int best_satisfaction_solution(int* V, int* C, int* H, int* B, int size, 
 	int totalV) {
 	int** opt = init_opt(totalV, size);
@@ -47,14 +103,17 @@ int best_satisfaction_solution(int* V, int* C, int* H, int* B, int size,
 				int x = opt[v-V[i]*k][i+1];
 				if (INT32_MIN != x) {
 					x += H[i]*k;
-					if (x > opt[v][i]) { opt[v][i] = x; }
+					if (x > opt[v][i]) {
+						opt[v][i] = x;
+					}
 				}
 			}
 		}
 	}
 
+	int best_satisfaction = opt[totalV][0];
 	release_opt(opt, totalV);
-	return opt[totalV][0];
+	return best_satisfaction;
 }
 
 int main(int argc, const char *argv[])
