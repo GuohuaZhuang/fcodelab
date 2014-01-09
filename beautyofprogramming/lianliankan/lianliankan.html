@@ -3,9 +3,6 @@
 <head>
 	<title>lianliankan implement in javascript</title>
 	<style type="text/css" media="screen">
-/*	background-image: url(./assets/12.gif);
-	background-position: center;
-	background-repeat: no-repeat;*/
 	body {
 		margin: 0px;
 	}
@@ -92,9 +89,33 @@
 				g_elements[i][j] = new ELEMENT(Math.floor(g_remaincount++/2)%ELEMENT_TYPE_COUNT + 1);
 			}
 		}
+		// debug_shuffl();
 		random_shuffl();
 		check_deadlock();
 		init_table();
+	}
+	function debug_shuffl() {
+		var darr = new Array(
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+		[0, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 9, 0], 
+		[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 13, 10, 0], 
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 10, 5, 0], 
+		[0, 13, 6, 0, 0, 0, 0, 0, 0, 11, 0, 0, 15, 0], 
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+		[0, 0, 11, 0, 0, 4, 0, 0, 0, 0, 0, 0, 8, 0], 
+		[0, 1, 5, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0], 
+		[0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 6, 14, 0], 
+		[0, 0, 13, 0, 11, 15, 0, 0, 9, 1, 11, 8, 14, 0], 
+		[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		);
+		g_remaincount = 0;
+		for (var i = 1; i <= ROWS; i ++) {
+			for (var j = 1; j <= COLUMNS; j ++) {
+				g_elements[i][j].flag = darr[i][j];
+				if (g_elements[i][j].flag > 0) { g_remaincount ++; }
+			}
+		}
 	}
 	function random_shuffl() {
 		// random exchange shuffl
@@ -233,8 +254,10 @@
 		if (null == g_preelement || null == g_curelement) {
 			return;
 		}
-		if (g_elements[g_preelement.x][g_preelement.y].flag
-				!= g_elements[g_curelement.x][g_curelement.y].flag) {
+		if ((g_elements[g_preelement.x][g_preelement.y].flag
+				!= g_elements[g_curelement.x][g_curelement.y].flag)
+			|| (g_preelement.x == g_curelement.x 
+				&& g_preelement.y == g_curelement.y)) {
 			cleanup(0);
 			return;
 		}
@@ -295,36 +318,44 @@
 			switch(pre_navigate) {
 				case NAVIGATE_TYPE.TOP:
 					if (p2.x+1 <= ROWS+1
-						&& next_crossing == g_crossing[p2.x+1][p2.y]
-						&& next_distance == g_distance[p2.x+1][p2.y]) {
+						&& next_crossing >= g_crossing[p2.x+1][p2.y]-1
+						&& next_distance == g_distance[p2.x+1][p2.y]
+						&& 0 == g_elements[p2.x+1][p2.y].flag) {
 						p1 = new POINT(p2.x+1, p2.y);
+						navigate = pre_navigate;
 					}
 					break;
 				case NAVIGATE_TYPE.BOTTOM:
 					if (p2.x-1 >= 0
-						&& next_crossing == g_crossing[p2.x-1][p2.y]
-						&& next_distance == g_distance[p2.x-1][p2.y]) {
+						&& next_crossing >= g_crossing[p2.x-1][p2.y]-1
+						&& next_distance == g_distance[p2.x-1][p2.y]
+						&& 0 == g_elements[p2.x-1][p2.y].flag) {
 						p1 = new POINT(p2.x-1, p2.y);
+						navigate = pre_navigate;
 					}
 					break;
 				case NAVIGATE_TYPE.LEFT:
 					if (p2.y+1 <= COLUMNS+1
-						&& next_crossing == g_crossing[p2.x][p2.y+1]
-						&& next_distance == g_distance[p2.x][p2.y+1]) {
+						&& next_crossing >= g_crossing[p2.x][p2.y+1]-1
+						&& next_distance == g_distance[p2.x][p2.y+1]
+						&& 0 == g_elements[p2.x][p2.y+1].flag) {
 						p1 = new POINT(p2.x, p2.y+1);
+						navigate = pre_navigate;
 					}
 					break;
 				case NAVIGATE_TYPE.RIGHT:
 					if (p2.y-1 >= 0
-						&& next_crossing == g_crossing[p2.x][p2.y-1]
-						&& next_distance == g_distance[p2.x][p2.y-1]) {
+						&& next_crossing >= g_crossing[p2.x][p2.y-1]-1
+						&& next_distance == g_distance[p2.x][p2.y-1]
+						&& 0 == g_elements[p2.x][p2.y-1].flag) {
 						p1 = new POINT(p2.x, p2.y-1);
+						navigate = pre_navigate;
 					}
 					break;
 				default:
 			}
 		}
-		return p1;
+		return {p1: p1, navigate: navigate};
 	}
 	// find back path is a diffcult problem!
 	function drawpath() {
@@ -338,7 +369,8 @@
 			pre_navigate = navigate;
 			navigate = g_navigate[p2.x][p2.y];
 			g_navigate[p2.x][p2.y] = NAVIGATE_TYPE.NONE;
-			p1 = adjustpoint(p0, p2, pre_navigate, navigate);
+			r = adjustpoint(p0, p2, pre_navigate, navigate);
+			p1 = r.p1; navigate = r.navigate;
 			if (null == p1) { break; }
 			paths.push(p1); paths.push(p2);
 			p0 = p2; p2 = p1;
@@ -380,48 +412,50 @@
 	function findpath(p, q, crossing, distance) {
 		if (crossing > 2) return false;
 		var S = [];
-		var x = p.x, y = p.y;
-		var f = 0;
+		S.push(new POINT(p.x, p.y));
 		var arrayrows = ROWS+1, arraycolumns = COLUMNS+1;
-		var isupdate = false;
-		update_minimum_path(x, y, crossing, distance, NAVIGATE_TYPE.NONE);
-		f = 0; x = p.x-1; y = p.y; while (x >= 0 && 0 == f) {
-			if (g_elements[x][y].flag > 0) { f = 1; }
-			isupdate = update_minimum_path(x, y, crossing, distance+(p.x-x), NAVIGATE_TYPE.TOP);
-			// if (!isupdate) { break; }
-			if (pointxy_equal(x, y, q)) { return true; }
-			if (!f) S.push(new POINT(x,y));
-			x --;
-		}
-		f = 0; x = p.x+1; y = p.y; while (x <= arrayrows && 0 == f) {
-			if (g_elements[x][y].flag > 0) { f = 1; }
-			isupdate = update_minimum_path(x, y, crossing, distance+(x-p.x), NAVIGATE_TYPE.BOTTOM);
-			// if (!isupdate) { break; }
-			if (pointxy_equal(x, y, q)) { return true; }
-			if (!f) S.push(new POINT(x,y));
-			x ++;
-		}
-		f = 0; x = p.x; y = p.y-1; while (y >= 0 && 0 == f) {
-			if (g_elements[x][y].flag > 0) { f = 1; }
-			isupdate = update_minimum_path(x, y, crossing, distance+(p.y-y), NAVIGATE_TYPE.LEFT);
-			// if (!isupdate) { break; }
-			if (pointxy_equal(x, y, q)) { return true; }
-			if (!f) S.push(new POINT(x,y));
-			y --;
-		}
-		f = 0; x = p.x; y = p.y+1; while (y <= arraycolumns && 0 == f) {
-			if (g_elements[x][y].flag > 0) { f = 1; }
-			isupdate = update_minimum_path(x, y, crossing, distance+(y-p.y), NAVIGATE_TYPE.RIGHT);
-			// if (!isupdate) { break; }
-			if (pointxy_equal(x, y, q)) { return true; }
-			if (!f) S.push(new POINT(x,y));
-			y ++;
-		}
+
+		var first_flag = true;
+		update_minimum_path(p.x, p.y, 0, 0, NAVIGATE_TYPE.NONE);
 		while (S.length > 0) {
-			var point = S.shift();
-			if (findpath(point, q, crossing+1, g_distance[point.x][point.y])) {
-				return true;
+			p = S.shift();
+
+			var isupdate = false;
+			var f = 0;
+			var x = p.x, y = p.y;
+			crossing = g_crossing[x][y] + 1;
+			if (first_flag) { first_flag = false; crossing = 0; }
+			distance = g_distance[x][y];
+			if (crossing >= 3) { continue; }
+			f = 0; x = p.x-1; y = p.y; while (x >= 0 && 0 == f) {
+				if (g_elements[x][y].flag > 0) { f = 1; }
+				isupdate = update_minimum_path(x, y, crossing, distance+(p.x-x), NAVIGATE_TYPE.TOP);
+				if (pointxy_equal(x, y, q)) { return true; }
+				if (!f) { if (isupdate) { S.push(new POINT(x,y)); } }
+				x --;
 			}
+			f = 0; x = p.x+1; y = p.y; while (x <= arrayrows && 0 == f) {
+				if (g_elements[x][y].flag > 0) { f = 1; }
+				isupdate = update_minimum_path(x, y, crossing, distance+(x-p.x), NAVIGATE_TYPE.BOTTOM);
+				if (pointxy_equal(x, y, q)) { return true; }
+				if (!f) { if (isupdate) { S.push(new POINT(x,y)); } }
+				x ++;
+			}
+			f = 0; x = p.x; y = p.y-1; while (y >= 0 && 0 == f) {
+				if (g_elements[x][y].flag > 0) { f = 1; }
+				isupdate = update_minimum_path(x, y, crossing, distance+(p.y-y), NAVIGATE_TYPE.LEFT);
+				if (pointxy_equal(x, y, q)) { return true; }
+				if (!f) { if (isupdate) { S.push(new POINT(x,y)); } }
+				y --;
+			}
+			f = 0; x = p.x; y = p.y+1; while (y <= arraycolumns && 0 == f) {
+				if (g_elements[x][y].flag > 0) { f = 1; }
+				isupdate = update_minimum_path(x, y, crossing, distance+(y-p.y), NAVIGATE_TYPE.RIGHT);
+				if (pointxy_equal(x, y, q)) { return true; }
+				if (!f) { if (isupdate) { S.push(new POINT(x,y)); } }
+				y ++;
+			}
+
 		}
 		return false;
 	}
@@ -430,6 +464,7 @@
 		init_struct();
 	}
 	function set_tip_style(style) {
+		if (g_remaincount == 0) { return ; }
 		if (null != g_tippreelement) {
 			panel.rows[g_tippreelement.x].cells[g_tippreelement.y].childNodes[0].style.border = style;
 		}
