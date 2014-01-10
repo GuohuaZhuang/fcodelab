@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define SUDOKU_SIZE 9
 
@@ -231,7 +232,9 @@ void output_valid_sudoku(CELL** cells, const int size) {
 * @return return 1 if sudoku is valid, otherwise return 0 if invalid.
 */
 int verify_sudoku(CELL** cells, const int size) {
+
 	int i = 0, j = 0, m = 0, n = 0, all_9_bit = 0, sub_size = size/3;
+
 	// horizontal verify
 	for (i = 0; i < size; i ++) {
 		all_9_bit = ALL_9_BIT;
@@ -241,6 +244,7 @@ int verify_sudoku(CELL** cells, const int size) {
 		}
 		if (all_9_bit != 0) { return 0; }
 	}
+
 	// vertical verify
 	for (j = 0; j < size; j ++) {
 		all_9_bit = ALL_9_BIT;
@@ -250,6 +254,7 @@ int verify_sudoku(CELL** cells, const int size) {
 		}
 		if (all_9_bit != 0) { return 0; }
 	}
+
 	// sub 3*3 verify
 	for (m = 0; m < sub_size; m ++) {
 		for (n = 0; n < sub_size; n ++) {
@@ -271,6 +276,7 @@ int verify_sudoku(CELL** cells, const int size) {
 * @brief test case for generate valid sudoku use recursion.
 */
 void testcase_for_generate_sudoku_use_recursion() {
+
 	CELL** cells = cells_init(SUDOKU_SIZE);
 
 	generate_valid_sudoku_use_recursion(cells, SUDOKU_SIZE);
@@ -285,9 +291,169 @@ void testcase_for_generate_sudoku_use_recursion() {
 	cells_release(cells, SUDOKU_SIZE);
 }
 
+////////////////////////////// sign replacement ////////////////////////////////
+
+/**
+* @brief generate valid sudoku signs, but is save index from 0~8 as the sign.
+* the same as horizontal memcpy as core like top-left and top-right, 
+* bottom-left and bottom-right.
+*
+* @param cells[SUDOKU_SIZE][SUDOKU_SIZE] cells.
+*/
+void generate_valid_sudoku_signs(int cells[SUDOKU_SIZE][SUDOKU_SIZE]) {
+
+	int i = 0, j = 0;
+
+	// fill core 3*3 sub array
+	for (i = 0; i < SUDOKU_SIZE; i ++) {
+		cells[ 3+(i/3) ] [ 3+(i%3) ] = i;
+	}
+	
+	// fill core's left, right, top, bottom 3*3 sub array
+	for (i = 0; i < 3; i ++) {
+		for (j = 0; j < 3; j ++) {
+			// left and right sub array
+			cells[3+(i)][0+j] = cells[3+((i+1)%3)][3+j];
+			cells[3+(i)][6+j] = cells[3+((i+2)%3)][3+j];
+			// top and bottom sub array
+			cells[0+j][3+(i)] = cells[3+j][3+((i+1)%3)];
+			cells[6+j][3+(i)] = cells[3+j][3+((i+2)%3)];
+		}
+	}
+	
+	// fill 4 angle 3*3 sub array
+	for (i = 0; i < 3; i ++) {
+		for (j = 0; j < 3; j ++) {
+			cells[0+(i)][0+j] = cells[0+((i+1)%3)][3+j];
+			cells[0+(i)][6+j] = cells[0+((i+2)%3)][3+j];
+			cells[6+(i)][0+j] = cells[6+((i+1)%3)][3+j];
+			cells[6+(i)][6+j] = cells[6+((i+2)%3)][3+j];
+		}
+	}
+}
+
+/**
+* @brief fill the valid sudoku signs valu use it self index sign.
+*
+* @param cells[SUDOKU_SIZE][SUDOKU_SIZE] sudoku cells.
+* @param sign[SUDOKU_SIZE] sign array.
+*/
+void fill_valid_sudoku_signs_value(int cells[SUDOKU_SIZE][SUDOKU_SIZE], 
+	int sign[SUDOKU_SIZE]) {
+	int i = 0, j = 0;
+	for (i = 0; i < SUDOKU_SIZE; i ++) {
+		for (j = 0; j < SUDOKU_SIZE; j ++) {
+			cells[i][j] = sign[ cells[i][j] ];
+		}
+	}
+}
+
+/**
+* @brief output valid sign sudoku table.
+*
+* @param cells sudoku sign table.
+* @param size cells row size or column size.
+*/
+void output_valid_sign_sudoku(int cells[SUDOKU_SIZE][SUDOKU_SIZE]) {
+	int i = 0, j = 0;
+	for (i = 0; i < SUDOKU_SIZE; i ++) {
+		for (j = 0; j < SUDOKU_SIZE; j ++) {
+			printf("%d\t", cells[i][j]);
+		}
+		printf("\n");
+	}
+}
+
+/**
+* @brief verify sign sudoku array.
+*
+* @param cells sign sudoku table array.
+* @param size sudoku size.
+*
+* @return return 1 if sudoku is valid, otherwise return 0 if invalid.
+*/
+int verify_sign_sudoku(int cells[SUDOKU_SIZE][SUDOKU_SIZE]) {
+
+	int i = 0, j = 0, m = 0, n = 0, all_9_bit = 0, sub_size = SUDOKU_SIZE/3;
+
+	// horizontal verify
+	for (i = 0; i < SUDOKU_SIZE; i ++) {
+		all_9_bit = ALL_9_BIT;
+		for (j = 0; j < SUDOKU_SIZE; j ++) {
+			all_9_bit &= ~(0x01 << (cells[i][j]-1));
+		}
+		if (all_9_bit != 0) { return 0; }
+	}
+
+	// vertical verify
+	for (j = 0; j < SUDOKU_SIZE; j ++) {
+		all_9_bit = ALL_9_BIT;
+		for (i = 0; i < SUDOKU_SIZE; i ++) {
+			all_9_bit &= ~(0x01 << (cells[i][j]-1));
+		}
+		if (all_9_bit != 0) { return 0; }
+	}
+
+	// sub 3*3 verify
+	for (m = 0; m < sub_size; m ++) {
+		for (n = 0; n < sub_size; n ++) {
+			all_9_bit = ALL_9_BIT;
+			for (i = m*sub_size; i < (m+1)*sub_size; i ++) {
+				for (j = n*sub_size; j < (n+1)*sub_size; j ++) {
+					all_9_bit &= ~(0x01 << (cells[i][j]-1));
+				}
+			}
+			if (all_9_bit != 0) { return 0; }
+		}
+	}
+	return 1;
+}
+
+/**
+* @brief random generate sign.
+*
+* @param sign[SUDOKU_SIZE] sign array.
+*/
+void random_generate_sign(int sign[SUDOKU_SIZE]) {
+	srand(time(NULL));
+	int i = 0, j = 0;
+	for (i = 0; i < SUDOKU_SIZE; i ++) {
+		j = rand() % SUDOKU_SIZE;
+		if (i != j) {
+			sign[i] ^= sign[j];
+			sign[j] ^= sign[i];
+			sign[i] ^= sign[j];
+		}
+	}
+}
+
+/**
+* @brief test case for generate valid sudoku use replacement.
+*/
+void testcase_for_generate_sudoku_use_replacement() {
+
+	int sign[SUDOKU_SIZE] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+	// can random the sign here
+	random_generate_sign(sign);
+	
+	int cells[SUDOKU_SIZE][SUDOKU_SIZE] = {{0}};
+
+	generate_valid_sudoku_signs(cells);
+	fill_valid_sudoku_signs_value(cells, sign);
+	output_valid_sign_sudoku(cells);
+
+	if (verify_sign_sudoku(cells)) {
+		printf("the sudoku is valid!\n");
+	} else {
+		printf("the sudoku is invalid!\n");
+	}
+}
+
 int main(int argc, const char *argv[])
 {
 	testcase_for_generate_sudoku_use_recursion();
+	testcase_for_generate_sudoku_use_replacement();
 
 	return 0;
 }
