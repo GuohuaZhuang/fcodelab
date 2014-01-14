@@ -18,8 +18,11 @@
 /**
 * @file minesweeper.c
 * @brief minesweeper calculate mine probability.
+* The tag minesweeper part is just find the definitely has mine or not has mine
+* cell, is the cell is unknow, just can use the first part calculate probability
+* method to calculate them probabilitys.
 * @author firstboy0513
-* @version 0.0.1
+* @version 0.0.2
 * @date 2014-01-13
 */
 #include <stdio.h>
@@ -92,6 +95,11 @@ void testcase_for_abc_mine_probability() {
 	}
 }
 
+//////////////////////////// TAG MINESWEEPER ///////////////////////////////////
+
+/**
+* @brief panel width and height cell count.
+*/
 #define PANEL_WIDTH 16
 #define PANEL_HEIGHT 16
 
@@ -100,6 +108,38 @@ void testcase_for_abc_mine_probability() {
 * mine.
 */
 typedef int CELL;
+
+/**
+* @brief cell in panel position.
+*/
+typedef struct _POS {
+	int x;
+	int y;
+} POS;
+
+/**
+* @brief get uncovered cells.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell center number cell.
+* @param pcount output uncovered cells count.
+*
+* @return return uncovered cells array.
+*/
+POS* get_uncovered_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
+	int* pcount);
+
+/**
+* @brief get covered mine cells.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell center number cell.
+* @param pcount output covered mine cells count.
+*
+* @return return covered mine cells array.
+*/
+POS* get_covered_mine_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
+	int* pcount);
 
 /**
 * @brief output panel.
@@ -128,22 +168,85 @@ void output_panel(CELL panel[PANEL_HEIGHT][PANEL_WIDTH]) {
 }
 
 /**
+* @brief set panel cell value.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell cell position.
+* @param value value.
+*/
+void set_panel(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, int value) {
+	panel[cell.x][cell.y] = value;
+}
+
+/**
+* @brief find all number cells in panel.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param pcount output panel count.
+*
+* @return return number cells array, remember free it memory outside.
+*/
+POS* find_num_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], int* pcount) {
+	if (pcount == NULL) { return NULL; }
+	*pcount = 0;
+	POS* cells = (POS*) malloc(sizeof(POS) * PANEL_HEIGHT*PANEL_WIDTH);
+	int i = 0, j = 0;
+	for (i = 0; i < PANEL_HEIGHT; i ++) {
+		for (j = 0; j < PANEL_WIDTH; j ++) {
+			if (panel[i][j] > 0 && panel[i][j] < 9) {
+				cells[(*pcount) ++] = (POS){i, j};
+			}
+		}
+	}
+	return cells;
+}
+
+/**
+* @brief set 8cell uncovered cell to covered if use number cell is definitely
+* judged its value.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell number cell.
+*/
+void set_8cell_with_num_cell(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell) {
+
+	int num = panel[cell.x][cell.y], i = 0;
+	int uncovered_count = 0, coveredmine_count = 0;
+	POS* uncovereds = get_uncovered_cells(panel, cell, &uncovered_count);
+	POS* coveredmines = get_covered_mine_cells(panel, cell, &coveredmine_count);
+
+	do {
+		if (num == coveredmine_count) {
+			for (i = 0; i < uncovered_count; i ++) {
+				set_panel(panel, uncovereds[i], 0);
+			}
+		} else if (num == uncovered_count + coveredmine_count) {
+			for (i = 0; i < uncovered_count; i ++) {
+				set_panel(panel, uncovereds[i], 9);
+			}
+		}
+	} while(0);
+
+	free(uncovereds); free(coveredmines);
+}
+
+/**
 * @brief pretreat panel to find the direct mine cell and no mine cell.
 *
 * @param panel[PANEL_HEIGHT][PANEL_WIDTH]
 */
 void pretreat_panel(CELL panel[PANEL_HEIGHT][PANEL_WIDTH]) {
-	// you can do nothing here, or you can prune to subtract complex.
-	return;
-}
+	// get all num cells
+	int num_cells_count = 0, i = 0;
+	POS* num_cells = find_num_cells(panel, &num_cells_count);
+	
+	// set all cell which can judged by num cell
+	for (i = 0; i < num_cells_count; i ++) {
+		set_8cell_with_num_cell(panel, num_cells[i]);
+	}
 
-/**
-* @brief cell in panel position.
-*/
-typedef struct _POS {
-	int x;
-	int y;
-} POS;
+	free(num_cells);
+}
 
 /**
 * @brief judge 8cell has cover cell or not.
@@ -233,73 +336,59 @@ void find_nearbys_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH],
 	}
 }
 
-// OK
-void set_panel(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, int value) {
-	// printf("set panel[%d][%d] = %d\n", cell.x, cell.y, value);
-	tmppanel[cell.x][cell.y] = value;
-}
-
-// OK
+/**
+* @brief get number cells from a 8cell with a given center cell.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell center cell.
+* @param pnumcount output number cell count.
+*
+* @return return number cells array, remember free it memory outside.
+*/
 POS* get_number_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
-	CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH], int* pnumcount) {
+	int* pnumcount) {
 	int i = cell.x, j = cell.y;
 	*pnumcount = 0;
 	POS* num_cells = (POS*) malloc(sizeof(POS) * 8);
 	if (i > 0 && j > 0 && panel[i-1][j-1] > 0 && panel[i-1][j-1] != 9) {
-		if (!numpanel[i-1][j-1]) {
 			num_cells[(*pnumcount) ++] = (POS){i-1, j-1};
-			numpanel[i-1][j-1] = 1;
-		}
 	}
 	if (i > 0 && panel[i-1][j] > 0 && panel[i-1][j] != 9) {
-		if (!numpanel[i-1][j]) {
 			num_cells[(*pnumcount) ++] = (POS){i-1, j};
-			numpanel[i-1][j] = 1;
-		}
 	}
 	if (i > 0 && j+1 < PANEL_WIDTH && panel[i-1][j+1] > 0 
 		&& panel[i-1][j+1] != 9) {
-		if (!numpanel[i-1][j+1]) {
 			num_cells[(*pnumcount) ++] = (POS){i-1, j+1};
-			numpanel[i-1][j+1] = 1;
-		}
 	}
 	if (j > 0 && panel[i][j-1] > 0 && panel[i][j-1] != 9) {
-		if (!numpanel[i][j-1]) {
 			num_cells[(*pnumcount) ++] = (POS){i, j-1};
-			numpanel[i][j-1] = 1;
-		}
 	}
 	if (j+1 < PANEL_WIDTH && panel[i][j+1] > 0 && panel[i][j+1] != 9) {
-		if (!numpanel[i][j+1]) {
 			num_cells[(*pnumcount) ++] = (POS){i, j+1};
-			numpanel[i][j+1] = 1;
-		}
 	}
 	if (i+1 < PANEL_HEIGHT && j > 0 && panel[i+1][j-1] > 0 
 		&& panel[i+1][j-1] != 9) {
-		if (!numpanel[i+1][j-1]) {
 			num_cells[(*pnumcount) ++] = (POS){i+1, j-1};
-			numpanel[i+1][j-1] = 1;
-		}
 	}
 	if (i+1 < PANEL_HEIGHT && panel[i+1][j] > 0 && panel[i+1][j] != 9) {
-		if (!numpanel[i+1][j]) {
 			num_cells[(*pnumcount) ++] = (POS){i+1, j};
-			numpanel[i+1][j] = 1;
-		}
 	}
 	if (i+1 < PANEL_HEIGHT && j+1 < PANEL_WIDTH && panel[i+1][j+1] > 0
 		&& panel[i+1][j+1] != 9) {
-		if (!numpanel[i+1][j+1]) {
 			num_cells[(*pnumcount) ++] = (POS){i+1, j+1};
-			numpanel[i+1][j+1] = 1;
-		}
 	}
 	return num_cells;
 }
 
-// OK
+/**
+* @brief get uncovered cells from 8cell with a given center cell.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell center cell.
+* @param pcount output uncovered cells count.
+*
+* @return return uncovered cells array, remember free it memory outside.
+*/
 POS* get_uncovered_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	int* pcount) {
 	*pcount = 0;
@@ -317,7 +406,15 @@ POS* get_uncovered_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	return cells;
 }
 
-// OK
+/**
+* @brief get covered mine cells from 8cell with a given center cell.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell a give center cell.
+* @param pcount output covered mine cells array.
+*
+* @return return covered mine cells array, remember free it memory outside.
+*/
 POS* get_covered_mine_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	int* pcount) {
 	*pcount = 0;
@@ -335,21 +432,46 @@ POS* get_covered_mine_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	return cells;
 }
 
-// statement
+/**
+* @brief judge has invalid situation or not.
+*
+* @param tmppanel[PANEL_HEIGHT][PANEL_WIDTH] tmp panel.
+* @param cell center cell.
+* @param mineornot hasmine is 1, otherwise no mine is 0.
+*
+* @return return 1 means has invalid situation, otherwise return 0 means not
+* has invalid situation.
+*/
 int judge_hasinvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
-	CELL mineornot, CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH]);
+	CELL mineornot);
 
-// statement
-int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
-	CELL numpanel_[PANEL_HEIGHT][PANEL_WIDTH]);
+/**
+* @brief judge is 8cell valid or not. It just find a valid situation is means
+* valid, otherwise means invalid.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell a given center cell.
+*
+* @return return 1 means valid, otherwise return 0 means invalid.
+*/
+int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell);
 
+/**
+* @brief judge has a valid situation in panel.
+*
+* @param tmppanel[PANEL_HEIGHT][PANEL_WIDTH] tmp panel.
+* @param cell center cell.
+* @param mineornot has mine is 1, or no mine is 0.
+*
+* @return return 1 means has valid, otherwise return 0 means invalid.
+*/
 int judge_hasvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
-	CELL mineornot, CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH]) {
+	CELL mineornot) {
 	int i = 0, numcount = 0, rflag = 1;
 	set_panel(tmppanel, cell, mineornot ? 9 : 0);
-	POS* num_cells = get_number_cells(tmppanel, cell, numpanel, &numcount);
+	POS* num_cells = get_number_cells(tmppanel, cell, &numcount);
 	for (i = 0; i < numcount; i ++) {
-		if (!is_8cell_valid(tmppanel, num_cells[i], numpanel)) {
+		if (!is_8cell_valid(tmppanel, num_cells[i])) {
 			rflag = 0; break;
 		}
 	}
@@ -357,9 +479,16 @@ int judge_hasvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	return rflag;
 }
 
-// OK
-int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
-	CELL numpanel_[PANEL_HEIGHT][PANEL_WIDTH]) {
+/**
+* @brief judge is 8cell valid or not. It just find a valid situation is means
+* valid, otherwise means invalid.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell a given center cell.
+*
+* @return return 1 means valid, otherwise return 0 means invalid.
+*/
+int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell) {
 	int num = panel[cell.x][cell.y], rflag = 1, i = 0;
 	int uncovered_count = 0, coveredmine_count = 0;
 	POS* uncovereds = get_uncovered_cells(panel, cell, &uncovered_count);
@@ -370,19 +499,17 @@ int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 			rflag = 0; break;
 		} else if (num == coveredmine_count) {
 			for (i = 0; i < uncovered_count; i ++) {
-				CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 				CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 				memcpy(tmppanel, panel, sizeof(CELL)*PANEL_HEIGHT*PANEL_WIDTH);
-				if (!judge_hasvalid(tmppanel, uncovereds[i], 0, numpanel)) {
+				if (!judge_hasvalid(tmppanel, uncovereds[i], 0)) {
 					rflag = 0; break;
 				}
 			}
 		} else if (num == uncovered_count + coveredmine_count) {
 			for (i = 0; i < uncovered_count; i ++) {
-				CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 				CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 				memcpy(tmppanel, panel, sizeof(CELL)*PANEL_HEIGHT*PANEL_WIDTH);
-				if (!judge_hasvalid(tmppanel, uncovereds[i], 1, numpanel)) {
+				if (!judge_hasvalid(tmppanel, uncovereds[i], 1)) {
 					rflag = 0; break;
 				}
 			}
@@ -392,14 +519,23 @@ int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	free(uncovereds); free(coveredmines); return rflag;
 }
 
-// OK
+/**
+* @brief judge has invalid situation or not.
+*
+* @param tmppanel[PANEL_HEIGHT][PANEL_WIDTH] tmp panel.
+* @param cell center cell.
+* @param mineornot hasmine is 1, otherwise no mine is 0.
+*
+* @return return 1 means has invalid situation, otherwise return 0 means not
+* has invalid situation.
+*/
 int judge_hasinvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
-	CELL mineornot, CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH]) {
+	CELL mineornot) {
 	int i = 0, numcount = 0, rflag = 0;
 	set_panel(tmppanel, cell, mineornot ? 9 : 0);
-	POS* num_cells = get_number_cells(tmppanel, cell, numpanel, &numcount);
+	POS* num_cells = get_number_cells(tmppanel, cell, &numcount);
 	for (i = 0; i < numcount; i ++) {
-		if (!is_8cell_valid(tmppanel, num_cells[i], numpanel)) {
+		if (!is_8cell_valid(tmppanel, num_cells[i])) {
 			rflag = 1; break;
 		}
 	}
@@ -407,26 +543,32 @@ int judge_hasinvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	return rflag;
 }
 
-// OK
+/**
+* @brief judge cell has mine or not use recursion method.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param cell current cell.
+* @param nearbys[PANEL_HEIGHT][PANEL_WIDTH] nearbys state array.
+*
+* @return return -1 means unknow, 0 means definitely no mine, 9 means definitely
+* has mine, or -9 means invalid minesweeper cells.
+*/
 int judge_cell_mine_or_not(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
 	CELL nearbys[PANEL_HEIGHT][PANEL_WIDTH]) {
 	int i = 0;
 	int valid[2] = {0};	// valid[0] for no mine, valid[1] for has mine
 	for (i = 0; i < 2; i ++) {
-		CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 		CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 		memcpy(tmppanel, panel, sizeof(CELL)*PANEL_HEIGHT*PANEL_WIDTH);
-		valid[i] = judge_hasinvalid(tmppanel, cell, i, numpanel) ? 0 : 1;
+		valid[i] = judge_hasinvalid(tmppanel, cell, i) ? 0 : 1;
 	}
 
 	if (valid[0] && valid[1]) {
 		return -1; 			// unknown
 	} else if (!valid[0] && valid[1]) {
-		printf("set_panel real panel in (%d, %d) is 9\n", cell.x, cell.y);
 		set_panel(panel, cell, 9);
 		return 9; 			// valid
 	} else if (valid[0] && !valid[1]) {
-		printf("set_panel real panel in (%d, %d) is 0\n", cell.x, cell.y);
 		set_panel(panel, cell, 0);
 		return 0; 			// nomine
 	} else {
@@ -435,15 +577,20 @@ int judge_cell_mine_or_not(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	}
 }
 
-// OK
+/**
+* @brief recursive all nearbys.
+*
+* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
+* @param nearbys[PANEL_HEIGHT][PANEL_WIDTH] nearbys state array.
+* @param nearby nearby nearby vector.
+* @param nearby_count nearby cell count.
+*/
 void recursive_all_nearby(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], 
 	CELL nearbys[PANEL_HEIGHT][PANEL_WIDTH], POS* nearby, int nearby_count) {
 	int i = 0;
 	for (i = 0; i < nearby_count; i ++) {
 		if (panel[nearby[i].x][nearby[i].y] >= 0) { continue; }
-		printf("After operator nearby(%d, %d):\n", nearby[i].x, nearby[i].y);
 		judge_cell_mine_or_not(panel, nearby[i], nearbys);
-		output_panel(panel);
 	}
 }
 
@@ -474,26 +621,29 @@ void testcase_for_fill_cell_mine_probability() {
 	printf("Before tag probability:\n");
 	output_panel(panel);
 
-	int nearby_count = 0;
-	POS* nearby = find_nearby_cells(panel, &nearby_count);
-	find_nearbys_cells(panel, nearbys);
-//	int i = 0;
-//	for (i = 0; i < nearby_count; i ++) {
-//		printf("nearby[%d] = (%d, %d)\n", i, nearby[i].x, nearby[i].y);
-//	}
+	int nearby_count = 0, previous_nearby_count = 0;
 
-	// pretreat_panel(panel, nearbys, nearby);
-	recursive_all_nearby(panel, nearbys, nearby, nearby_count);
+	do {
+		// pretreat first
+		pretreat_panel(panel);
+
+		// use deep analysis to recursive all possible
+		previous_nearby_count = nearby_count;
+		POS* nearby = find_nearby_cells(panel, &nearby_count);
+		find_nearbys_cells(panel, nearbys);
+		recursive_all_nearby(panel, nearbys, nearby, nearby_count);
+		free(nearby);
+
+	} while (nearby_count != previous_nearby_count);
 
 	printf("After tag probability:\n");
 	output_panel(panel);
-
-	free(nearby);
 }
 
 int main(int argc, const char *argv[])
 {
-	// testcase_for_abc_mine_probability();
+	testcase_for_abc_mine_probability();
+
 	testcase_for_fill_cell_mine_probability();
 
 	return 0;
