@@ -189,22 +189,6 @@ int has_8cell_cover(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], int i, int j) {
 }
 
 /**
-* @brief judge the 8 cells is valid or not.
-*
-* @param panel[PANEL_HEIGHT][PANEL_WIDTH] panel.
-* @param i cell position x in panel.
-* @param j cell position y in panel.
-* @param c cell value.
-*
-* @return return 1 means valid, otherwise return 0 means invalid.
-*/
-int isvalid_8cell(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], int i, int j, int c) {
-	// TODO
-	// 根据规则直接从原有数字中判断为突破口，然后根据这样子从这个格子变化开始去寻找一个可cover的递归,好像不需要吧
-	return 0;
-}
-
-/**
 * @brief find nearby cells to judge next, otherwise other cell are not simple to
 * cover it, and them are get probability use average.
 *
@@ -322,7 +306,7 @@ POS* get_uncovered_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	POS* cells = (POS*) malloc(sizeof(POS) * 8);
 	int i = 0, j = 0, x = cell.x, y = cell.y;
 	for (i = x-1; i <= x+1; i ++) {
-		for (j = y-1; j < y+1; j ++) {
+		for (j = y-1; j <= y+1; j ++) {
 			if (i == x && j == y) { continue; }
 			if (i < 0 || i >= PANEL_HEIGHT || j < 0 || j >= PANEL_WIDTH) {
 				continue;
@@ -340,7 +324,7 @@ POS* get_covered_mine_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 	POS* cells = (POS*) malloc(sizeof(POS) * 8);
 	int i = 0, j = 0, x = cell.x, y = cell.y;
 	for (i = x-1; i <= x+1; i ++) {
-		for (j = y-1; j < y+1; j ++) {
+		for (j = y-1; j <= y+1; j ++) {
 			if (i == x && j == y) { continue; }
 			if (i < 0 || i >= PANEL_HEIGHT || j < 0 || j >= PANEL_WIDTH) {
 				continue;
@@ -355,30 +339,50 @@ POS* get_covered_mine_cells(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 int judge_hasinvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
 	CELL mineornot, CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH]);
 
+// statement
+int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
+	CELL numpanel_[PANEL_HEIGHT][PANEL_WIDTH]);
+
+int judge_hasvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
+	CELL mineornot, CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH]) {
+	int i = 0, numcount = 0, rflag = 1;
+	set_panel(tmppanel, cell, mineornot ? 9 : 0);
+	POS* num_cells = get_number_cells(tmppanel, cell, numpanel, &numcount);
+	for (i = 0; i < numcount; i ++) {
+		if (!is_8cell_valid(tmppanel, num_cells[i], numpanel)) {
+			rflag = 0; break;
+		}
+	}
+	free(num_cells);
+	return rflag;
+}
+
 // OK
 int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
-	CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH]) {
+	CELL numpanel_[PANEL_HEIGHT][PANEL_WIDTH]) {
 	int num = panel[cell.x][cell.y], rflag = 1, i = 0;
 	int uncovered_count = 0, coveredmine_count = 0;
 	POS* uncovereds = get_uncovered_cells(panel, cell, &uncovered_count);
 	POS* coveredmines = get_covered_mine_cells(panel, cell, &coveredmine_count);
 
 	do {
-		if (num > coveredmine_count) {
+		if (num > coveredmine_count+uncovered_count) {
 			rflag = 0; break;
 		} else if (num == coveredmine_count) {
 			for (i = 0; i < uncovered_count; i ++) {
+				CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 				CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 				memcpy(tmppanel, panel, sizeof(CELL)*PANEL_HEIGHT*PANEL_WIDTH);
-				if (!judge_hasinvalid(tmppanel, uncovereds[i], 0, numpanel)) {
+				if (!judge_hasvalid(tmppanel, uncovereds[i], 0, numpanel)) {
 					rflag = 0; break;
 				}
 			}
 		} else if (num == uncovered_count + coveredmine_count) {
 			for (i = 0; i < uncovered_count; i ++) {
+				CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 				CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 				memcpy(tmppanel, panel, sizeof(CELL)*PANEL_HEIGHT*PANEL_WIDTH);
-				if (!judge_hasinvalid(tmppanel, uncovereds[i], 1, numpanel)) {
+				if (!judge_hasvalid(tmppanel, uncovereds[i], 1, numpanel)) {
 					rflag = 0; break;
 				}
 			}
@@ -391,12 +395,12 @@ int is_8cell_valid(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 // OK
 int judge_hasinvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
 	CELL mineornot, CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH]) {
-	int i = 0, numcount = 0, rflag = 1;
+	int i = 0, numcount = 0, rflag = 0;
 	set_panel(tmppanel, cell, mineornot ? 9 : 0);
 	POS* num_cells = get_number_cells(tmppanel, cell, numpanel, &numcount);
 	for (i = 0; i < numcount; i ++) {
-		if (is_8cell_valid(tmppanel, num_cells[i], numpanel)) {
-			rflag = 0; break;
+		if (!is_8cell_valid(tmppanel, num_cells[i], numpanel)) {
+			rflag = 1; break;
 		}
 	}
 	free(num_cells);
@@ -407,23 +411,26 @@ int judge_hasinvalid(CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH], POS cell,
 int judge_cell_mine_or_not(CELL panel[PANEL_HEIGHT][PANEL_WIDTH], POS cell, 
 	CELL nearbys[PANEL_HEIGHT][PANEL_WIDTH]) {
 	int i = 0;
-	int hasmine[2] = {0};	// hasmine[0] for no mine, hasmine[1] for has mine
+	int valid[2] = {0};	// valid[0] for no mine, valid[1] for has mine
 	for (i = 0; i < 2; i ++) {
 		CELL numpanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 		CELL tmppanel[PANEL_HEIGHT][PANEL_WIDTH] = {{0}};
 		memcpy(tmppanel, panel, sizeof(CELL)*PANEL_HEIGHT*PANEL_WIDTH);
-		hasmine[i] = judge_hasinvalid(tmppanel, cell, i, numpanel) ? 1 : 0;
+		valid[i] = judge_hasinvalid(tmppanel, cell, i, numpanel) ? 0 : 1;
 	}
 
-	if (hasmine[0] && hasmine[1]) {
+	if (valid[0] && valid[1]) {
 		return -1; 			// unknown
-	} else if (!hasmine[0] && hasmine[1]) {
+	} else if (!valid[0] && valid[1]) {
+		printf("set_panel real panel in (%d, %d) is 9\n", cell.x, cell.y);
 		set_panel(panel, cell, 9);
-		return 9; 			// hasmine
-	} else if (hasmine[0] && !hasmine[1]) {
+		return 9; 			// valid
+	} else if (valid[0] && !valid[1]) {
+		printf("set_panel real panel in (%d, %d) is 0\n", cell.x, cell.y);
 		set_panel(panel, cell, 0);
 		return 0; 			// nomine
 	} else {
+		printf("[ERR] -- find invalid minesweeper cells!\n");
 		return -9; 			// error invalid
 	}
 }
@@ -434,7 +441,9 @@ void recursive_all_nearby(CELL panel[PANEL_HEIGHT][PANEL_WIDTH],
 	int i = 0;
 	for (i = 0; i < nearby_count; i ++) {
 		if (panel[nearby[i].x][nearby[i].y] >= 0) { continue; }
+		printf("After operator nearby(%d, %d):\n", nearby[i].x, nearby[i].y);
 		judge_cell_mine_or_not(panel, nearby[i], nearbys);
+		output_panel(panel);
 	}
 }
 
