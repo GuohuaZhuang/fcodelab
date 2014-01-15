@@ -1,0 +1,19 @@
+百元百鸡问题
+
+大整数_加减乘除取模实现
+
+单纯形法_线性规划
+
+各种排序算法及其改进方法的实现
+
+线性代数中特征方程求解fibonacci通项公式
+
+readline_方向键_shell
+
+信号量_互斥锁
+	semaphore:
+		http://www.csc.villanova.edu/~mdamian/threads/posixsem.html
+		man sem_wait, sem_init, sem_post, ...
+	pthread & mutex (POSIX):
+		http://www.yolinux.com/TUTORIALS/LinuxTutorialPosixThreads.html
+
