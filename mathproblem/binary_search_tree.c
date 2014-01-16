@@ -116,6 +116,7 @@ void bst_delete_node(NODE** pp) {
 		(*pp)->key = s->key;
 		if (_tp != (*pp)) { _tp->rchild = s->lchild; }
 		else { _tp->lchild = s->lchild; }
+		free(s);
 	}
 }
 
@@ -133,10 +134,22 @@ int bst_delete(TREE T, const int key) {
 	else if (T->key > key) { return bst_delete(T->lchild, key); }
 	else { return bst_delete(T->rchild, key); }
 }
-// 
-// void bst_traverse(TREE T, BST_TRAVERSE_FUN visit) {
-// }
-// 
+
+typedef void BST_TRAVERSE_FUN(NODE*);
+
+/**
+* @brief binary search/sort tree traverse method.
+*
+* @param T tree point.
+* @param visit traverse function.
+*/
+void bst_traverse(TREE T, BST_TRAVERSE_FUN visit) {
+	if (!T) { return; }
+	if (T->lchild) { bst_traverse(T->lchild, visit); }
+	visit(T);
+	if (T->rchild) { bst_traverse(T->rchild, visit); }
+}
+
 int main(int argc, const char *argv[])
 {
 	const int array[] = {53, 23, 54, 29, 95, 34, 22, 21, 53};
@@ -149,9 +162,21 @@ int main(int argc, const char *argv[])
 		bst_insert(&T, array[i]);
 	}
 
+	void printout_bst_node(NODE* p) { printf("%d ", p->key); }
+
+	printf("traverse printout:\n\t");
+	bst_traverse(T, printout_bst_node);
+	printf("\n");
+
 	NODE* p = NULL;
 	printf("bst_search(T, 23) = %d\n", bst_search(T, 23, NULL, &p));
 	printf("bst_search(T, 25) = %d\n", bst_search(T, 25, NULL, &p));
+	printf("bst_delete(T, 23) = %d\n", bst_delete(T, 23));
+	printf("bst_search(T, 23) = %d\n", bst_search(T, 23, NULL, &p));
+
+	printf("traverse printout:\n\t");
+	bst_traverse(T, printout_bst_node);
+	printf("\n");
 
 	bst_destory(T);
 
