@@ -73,6 +73,13 @@ void RightBalance(BSTTree &T) {
 	}
 }
 
+int SearchAVL(BSTTree &T, ElemType e) {
+	if (!T) { return 0; }
+	if (EQ(e, T->data)) { return 1; }
+	else if (LT(e, T->data)) { return SearchAVL(T->lchild, e); }
+	else { return SearchAVL(T->rchild, e); }
+}
+
 int InsertAVL(BSTTree &T, ElemType e, bool &taller) {
 	if (!T) {
 		T = (BSTTree) malloc(sizeof(BSTNode));
@@ -111,5 +118,13 @@ int InsertAVL(BSTTree &T, ElemType e, bool &taller) {
 
 int main(int argc, const char *argv[])
 {
+	BSTTree T = NULL;
+	bool taller = 0;
+	printf("insert ret = %d\n", InsertAVL(T, 32, taller));
+	printf("insert ret = %d\n", InsertAVL(T, 31, taller));
+	printf("insert ret = %d\n", InsertAVL(T, 32, taller));
+	printf("search ret = %d\n", SearchAVL(T, 32));
+	printf("search ret = %d\n", SearchAVL(T, 33));
+
 	return 0;
 }
