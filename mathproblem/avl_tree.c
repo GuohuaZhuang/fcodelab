@@ -18,10 +18,19 @@
 /**
 * @file avl_tree.c
 * @brief AVL tree, also named as balance binary search/sort tree, implement in 
-* C program.
+* C program. The insert and delete will rebalance, it is a bit complex in it.
 * reference:
 * 	http://en.wikipedia.org/wiki/AVL_tree
 * 	http://zh.wikipedia.org/wiki/AVL%E6%A0%91
+* Some code in the net and not correct, there are lose the delete method or 
+* wrong implement, and some are more complex or not good efficiency in the 
+* delete method, and I download some code in the wikipedia last links, but there 
+* implement is also complex, so I code it myself, I suggest you also to write 
+* your own AVL tree yourself, it will let you more clear to know its insert and
+* delete method to do. Those code implement the AVL tree in C is just reference
+* to use, I test it in 10000000 random integer numbers just use 37 more seconds 
+* include insert, search and delete operatorations.
+*
 * @author firstboy0513
 * @version 0.0.1
 * @date 2014-01-20
@@ -29,28 +38,62 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/**
+ * @brief AVL tree public method extern to use or private be invoke.
+*/
 #define PUBLIC
 #define PRIVATE static
 
+/**
+* @brief Element compare EQ as equal, LT as little than, GT as greate than.
+*/
 #define EQ(a, b) (a == b)
 #define LT(a, b) (a < b)
 #define GT(a, b) (a > b)
 
+/**
+* @brief Element copy macro.
+*
+* @param des destination element.
+* @param src source element.
+*/
 #define ELEMENT_COPY(des, src) { des = src; }
 
+/**
+* @brief Element type.
+*/
 typedef int ELEMENT;
+
+/**
+* @brief AVL node struct, with data, left child point and right child point, and
+* also a balance factor named as bf may equal LH, EH or RH.
+*/
 typedef struct _NODE {
 	ELEMENT data;
 	int		bf;
 	struct _NODE* lchild;
 	struct _NODE* rchild;
 } NODE, *TREE;
+
+/**
+* @brief balance factor enum.
+*/
 typedef enum {LH = 1, EH = 0, RH = -1} BF;
 
+/**
+* @brief AVL tree initialize method.
+*
+* @return return AVL tree point.
+*/
 PUBLIC TREE avl_init(void) {
 	return NULL;
 }
 
+/**
+* @brief AVL tree destory method.
+*
+* @param T tree point.
+*/
 PUBLIC void avl_destory(TREE T) {
 	if (!T) { return; }
 	if (T->lchild) { avl_destory(T->lchild); }
@@ -58,6 +101,15 @@ PUBLIC void avl_destory(TREE T) {
 	free(T);
 }
 
+/**
+* @brief AVL tree search method. With given one element and find it.
+*
+* @param T tree point.
+* @param d element to find.
+*
+* @return return 1 means find it in the AVL tree, otherwise return 0 means not
+* find it in the AVL tree.
+*/
 PUBLIC int avl_search(TREE T, ELEMENT d) {
 	if (!T) {
 		return 0;
@@ -70,6 +122,13 @@ PUBLIC int avl_search(TREE T, ELEMENT d) {
 	}
 }
 
+/**
+* @brief AVL tree new node.
+*
+* @param d element in node.
+*
+* @return return malloc node point.
+*/
 PRIVATE NODE* _avl_newnode(ELEMENT d) {
 	NODE* P = (NODE*) malloc(sizeof(NODE));
 	ELEMENT_COPY(P->data, d);
@@ -79,6 +138,13 @@ PRIVATE NODE* _avl_newnode(ELEMENT d) {
 	return P;
 }
 
+/**
+* @brief AVL tree also know as right-right rotate when insert new node in the
+* right right subtree, and update the balance factor where node subtree is 
+* change.
+*
+* @param pT tree quote point.
+*/
 PRIVATE void _avl_rr_rotate(TREE* pT) {
 	NODE* lchild = (*pT)->lchild;
 	// rotate
@@ -89,6 +155,13 @@ PRIVATE void _avl_rr_rotate(TREE* pT) {
 	(*pT)->bf = EH; (*pT)->rchild->bf = EH;
 }
 
+/**
+* @brief AVL tree also know as left-right rotate when insert new node in the
+* left right subtree, and update the balance factor where node subtree is 
+* change.
+*
+* @param pT tree quote point.
+*/
 PRIVATE void _avl_lr_rotate(TREE* pT) {
 	NODE* lchild = (*pT)->lchild;
 	NODE* lrchild = lchild->rchild;
@@ -107,6 +180,12 @@ PRIVATE void _avl_lr_rotate(TREE* pT) {
 	}
 }
 
+/**
+* @brief AVL tree also know as left-left rotate when insert new node in the left
+* left subtree, and update the balance factor where node subtree is change.
+*
+* @param pT tree quote point.
+*/
 PRIVATE void _avl_ll_rotate(TREE* pT) {
 	NODE* rchild = (*pT)->rchild;
 	// rotate
@@ -117,6 +196,13 @@ PRIVATE void _avl_ll_rotate(TREE* pT) {
 	(*pT)->bf = EH; (*pT)->lchild->bf = EH;
 }
 
+/**
+* @brief AVL tree also know as right-left rotate when insert new node in the 
+* right left subtree, and update the balance factor where node subtree is 
+* change.
+*
+* @param pT tree quote point.
+*/
 PRIVATE void _avl_rl_rotate(TREE* pT) {
 	NODE* rchild = (*pT)->rchild;
 	NODE* rlchild = rchild->lchild;
@@ -135,6 +221,12 @@ PRIVATE void _avl_rl_rotate(TREE* pT) {
 	}
 }
 
+/**
+* @brief AVL tree rebalance when left subtree is change to be taller.
+*
+* @param pT tree quote point.
+* @param ptaller output becomes taller tree or not.
+*/
 PRIVATE void _avl_left_taller_rebalance(TREE* pT, int* ptaller) {
 	// assert ptaller not null and *ptaller == 1
 	if ((*pT)->bf == LH) {
@@ -149,6 +241,12 @@ PRIVATE void _avl_left_taller_rebalance(TREE* pT, int* ptaller) {
 	}
 }
 
+/**
+* @brief AVL tree rebalance when right subtree is change to be taller.
+*
+* @param pT tree quote point.
+* @param ptaller output becomes taller tree or not.
+*/
 PRIVATE void _avl_right_taller_rebalance(TREE* pT, int* ptaller) {
 	// assert ptaller not null and *ptaller == 1
 	if ((*pT)->bf == LH) {
@@ -163,6 +261,17 @@ PRIVATE void _avl_right_taller_rebalance(TREE* pT, int* ptaller) {
 	}
 }
 
+/**
+* @brief AVL tree insert method. With given one element, and find the place to 
+* insert it.
+*
+* @param pT tree quote point.
+* @param d element to insert.
+* @param ptaller output taller or not.
+*
+* @return return 1 means insert success, otherwise return 0 means insert failed,
+* or return -1 means input invalid error.
+*/
 PUBLIC int avl_insert(TREE* pT, ELEMENT d, int* ptaller) {
 	if (!pT || !ptaller) {
 		printf("[ERR] -- avl_insert input invalid!\n");
@@ -186,82 +295,69 @@ PUBLIC int avl_insert(TREE* pT, ELEMENT d, int* ptaller) {
 	return ret;
 }
 
-typedef struct _TREE_STACK {
+/**
+* @brief AVL tree stack use for store father point in delete node method.
+*/
+typedef struct _AVLTREE_STACK {
 	TREE* pT;
-	struct _TREE_STACK* next;
-} TREE_STACK;
+	struct _AVLTREE_STACK* next;
+} AVLTREE_STACK;
 
-// TODO
-void tree_stack_push(TREE_STACK** pTS, TREE* pT) {
+/**
+* @brief AVL tree stack push.
+*
+* @param pTS stack quote point.
+* @param pT push father AVL tree quote point.
+*/
+void tree_stack_push(AVLTREE_STACK** pTS, TREE* pT) {
 	if (!pTS) { return; }
-	TREE_STACK* _ts = (TREE_STACK*) malloc(sizeof(TREE_STACK));
+	AVLTREE_STACK* _ts = (AVLTREE_STACK*) malloc(sizeof(AVLTREE_STACK));
 	_ts->pT = pT; _ts->next = (*pTS);
 	(*pTS) = _ts;
 }
-// TODO
-TREE* tree_stack_front(TREE_STACK** pTS) {
+/**
+* @brief AVL tree stack front father quote point.
+*
+* @param pTS stack quote point.
+*
+* @return first father quote point.
+*/
+TREE* tree_stack_front(AVLTREE_STACK** pTS) {
 	if (!pTS) { return NULL; }
 	return (*pTS)->pT;
 }
-// TODO
-TREE* tree_stack_pop(TREE_STACK** pTS) {
+/**
+* @brief AVL tree stack pop.
+*
+* @param pTS stack quote point.
+*
+* @return pop from stack, and return the pop father quote point.
+*/
+TREE* tree_stack_pop(AVLTREE_STACK** pTS) {
 	if (!pTS) { return NULL; }
 	if (!(*pTS)) { return NULL; }
-	TREE_STACK* _ts = (*pTS);
+	AVLTREE_STACK* _ts = (*pTS);
 	(*pTS) = (*pTS)->next;
 	TREE* pT = _ts->pT;
 	free(_ts);
 	return pT;
 }
 
-PRIVATE void _avl_left_lower_rebalance(TREE* pT, int* plower);
-
-PRIVATE void _avl_right_lower_rebalance(TREE* pT, int* plower);
-
-PRIVATE void _avl_deletenode(TREE* pT, int* plower) {
-	if (NULL == (*pT)->lchild) {
-		NODE* Y = (*pT); (*pT) = (*pT)->rchild; (*plower) = 1; free(Y);
-	} else if (NULL == (*pT)->rchild) {
-		NODE* Y = (*pT); (*pT) = (*pT)->lchild; (*plower) = 1; free(Y);
-	} else { // (*pT)->lchild and (*pT)->rchild are all not null.
-		NODE* Y = (*pT)->lchild;
-		if (NULL == Y->rchild) {
-			ELEMENT_COPY((*pT)->data, Y->data);
-			(*pT)->lchild = Y->lchild; (*plower) = 1; free(Y);
-			_avl_left_lower_rebalance(pT, plower);
-		} else { // NULL != Y->rchild
-			TREE_STACK* TS = NULL;
-			tree_stack_push(&TS, &((*pT)->lchild));
-			while (Y->rchild) {
-				if (Y->rchild->rchild) { tree_stack_push(&TS, &(Y->rchild)); }
-				Y = Y->rchild;
-			}
-			/// copy data to pT node and delete Y node
-			ELEMENT_COPY((*pT)->data, Y->data);
-			TREE* YF = tree_stack_front(&TS);
-			(*YF)->rchild = Y->lchild;
-			(*plower) = 1; free(Y);
-			// pop all father line and right lower rabalance
-			while (NULL != (YF = tree_stack_pop(&TS))) {
-				if (0 == (*plower)) { continue; }
-				_avl_right_lower_rebalance(YF, plower);
-			}
-			// finally do left lower rebalance if lower from left subtree
-			if (1 == (*plower)) { _avl_left_lower_rebalance(pT, plower); }
-		}
-	}
-	// if pT has single child or no, then remove pT and attach its child to its father, now his father bf --, and require rebalance...
-	// elseif pT has two child, find the front data child, means its first left-right child, and copy the data in pT, and begin to 
-	// 		remove this node named Y. As we know Y has no child or single left child, so we can attach the child to Y's father.
-	// 		And then require rebalance from Y's father to pT.
-	//
-	// 		may be the Y should split 2 situation:
-	// 			1. the Y is the pT's lchild.
-	// 			2. the Y is the pT's lchild's grand right son.
-	//
-	// 		Uh, how about write a rebalance_lower function?
-}
-
+/**
+* @brief AVL tree rebalance when left subtree becomes lower height.
+* In (*pT)->bf == RH situation, think about 3 situation to process:
+* 	if ((*pT)-rchild->bf == EH) {
+* 		// (*pT)->rchild's left/right child height all is h-2.
+* 	} else if ((*pT)->rchild->bf == LH) {
+* 		// (*pT)->rchild's left height is h-2, right height is h-3.
+* 	} else { // (*pT)->rchild->bf == RH
+* 		// (*pT)->rchild's left height is h-3, right height is h-2.
+* 	}
+* Draw the tree, then we will find its logic how to rebalance tree.
+*
+* @param pT tree quote point.
+* @param plower output tree becomes lower for father or not.
+*/
 PRIVATE void _avl_left_lower_rebalance(TREE* pT, int* plower) {
 	if ((*pT)->bf == LH) {
 		(*pT)->bf = EH; (*plower) = 1;
@@ -305,17 +401,17 @@ PRIVATE void _avl_left_lower_rebalance(TREE* pT, int* plower) {
 			(*pT)->bf = EH; (*pT)->lchild->bf = EH;
 			(*plower) = 1;
 		}
-		// think about 3 situation to process:
-		// 		1. if ((*pT)-rchild->bf == EH) {
-		// 			// (*pT)->rchild's left/right child height all is h-2.
-		// 		} else if ((*pT)->rchild->bf == LH) {
-		// 			// (*pT)->rchild's left height is h-2, right height is h-3.
-		// 		} else { // (*pT)->rchild->bf == RH
-		// 			// (*pT)->rchild's left height is h-3, right height is h-2.
-		// 		}
 	}
 }
 
+/**
+* @brief AVL tree rebalance when right subtree becomes lower height.
+* Draw the tree, then we will find its logic how to rebalance tree, it is the 
+* same logic corresponding with left subtree becomes lower height.
+*
+* @param pT tree quote point.
+* @param plower output tree becomes lower for father or not.
+*/
 PRIVATE void _avl_right_lower_rebalance(TREE* pT, int* plower) {
 	if ((*pT)->bf == RH) {
 		(*pT)->bf = EH; (*plower) = 1;
@@ -362,7 +458,68 @@ PRIVATE void _avl_right_lower_rebalance(TREE* pT, int* plower) {
 	}
 }
 
-// TODO
+/**
+* @brief AVL tree delete one node. This method is to find its front data child,
+* means its first left-right child to cover its data value, and replace to 
+* remove the child node. The verbose analysis is the following.
+* if pT has single child or no, then remove pT and attach its child to its 
+* father, now his father bf --, and require rebalance it.
+* elseif pT has two child, find the front data child, means its first left-right
+* child, and copy the data in pT, and begin to remove this node named Y. As we 
+* know Y has no child or single left child, so we can attach the child to Y's 
+* father. And then require rebalance from Y's father to pT.
+* May be the Y should split 2 situation:
+* 	1. the Y is the pT's lchild.
+* 	2. the Y is the pT's lchild's grand right son.
+*
+* @param pT tree quote point.
+* @param plower output tree becomes lower or not.
+*/
+PRIVATE void _avl_deletenode(TREE* pT, int* plower) {
+	if (NULL == (*pT)->lchild) {
+		NODE* Y = (*pT); (*pT) = (*pT)->rchild; (*plower) = 1; free(Y);
+	} else if (NULL == (*pT)->rchild) {
+		NODE* Y = (*pT); (*pT) = (*pT)->lchild; (*plower) = 1; free(Y);
+	} else { // (*pT)->lchild and (*pT)->rchild are all not null.
+		NODE* Y = (*pT)->lchild;
+		if (NULL == Y->rchild) {
+			ELEMENT_COPY((*pT)->data, Y->data);
+			(*pT)->lchild = Y->lchild; (*plower) = 1; free(Y);
+			_avl_left_lower_rebalance(pT, plower);
+		} else { // NULL != Y->rchild
+			AVLTREE_STACK* TS = NULL;
+			tree_stack_push(&TS, &((*pT)->lchild));
+			while (Y->rchild) {
+				if (Y->rchild->rchild) { tree_stack_push(&TS, &(Y->rchild)); }
+				Y = Y->rchild;
+			}
+			/// copy data to pT node and delete Y node
+			ELEMENT_COPY((*pT)->data, Y->data);
+			TREE* YF = tree_stack_front(&TS);
+			(*YF)->rchild = Y->lchild;
+			(*plower) = 1; free(Y);
+			// pop all father line and right lower rabalance
+			while (NULL != (YF = tree_stack_pop(&TS))) {
+				if (0 == (*plower)) { continue; }
+				_avl_right_lower_rebalance(YF, plower);
+			}
+			// finally do left lower rebalance if lower from left subtree
+			if (1 == (*plower)) { _avl_left_lower_rebalance(pT, plower); }
+		}
+	}
+}
+
+/**
+* @brief AVL tree delete method. With given one element, then find it to delete
+* the node of this element.
+*
+* @param pT tree quote point.
+* @param d element to delete.
+* @param plower output lower or not.
+*
+* @return return 1 means delete success, otherwise return 0 means delete failed,
+* or return -1 means input invalid error.
+*/
 PUBLIC int avl_delete(TREE* pT, ELEMENT d, int* plower) {
 	if (!pT || !plower) {
 		printf("[ERR] -- avl_delete input invalid!\n");
@@ -386,6 +543,12 @@ PUBLIC int avl_delete(TREE* pT, ELEMENT d, int* plower) {
 	return ret;
 }
 
+/**
+* @brief AVL tree traveral use left-middle-right order.
+*
+* @param T tree.
+* @param function traveral every node function.
+*/
 PUBLIC void avl_traveral(TREE T, void function(NODE*)) {
 	if (!T) { return; }
 	if (T->lchild) { avl_traveral(T->lchild, function); }
@@ -397,24 +560,50 @@ PUBLIC void avl_traveral(TREE T, void function(NODE*)) {
 
 void printout_node(NODE* p) { printf("%d ", p->data); }
 
+#include <time.h>
+
+/**
+* @brief test case for single number insert, search and delete.
+*/
+void testcase_for_single() {
+	TREE T = avl_init();
+	int taller = 0, lower = 0;
+
+	printf("avl_insert(T, 32) = %d\n", avl_insert(&T, 32, &taller));
+
+	printf("avl_search(T, 32) = %d\n", avl_search(T, 32));
+
+	printf("avl_delete(T, 32) = %d\n", avl_delete(&T, 32, &lower));
+
+	printf("avl_traveral: ");
+	avl_traveral(T, printout_node);
+	printf("\n");
+
+	avl_destory(T);
+}
+
+/**
+* @brief test case for random number insert, search and delete.
+*/
 void testcase_for_random() {
 	TREE T = avl_init();
 	int taller = 0, lower = 0;
 	int i = 0, n = 100;
 	int _t = 0;
+	srand(time(NULL));
 	for (i = 0; i < n; i ++) {
-		_t = rand() % 100;
+		_t = rand() % n;
 		printf("avl_insert(&T, %d) = %d\n", _t, avl_insert(&T, _t, &taller));
 	}
-	for (i = 0; i < 20; i ++) {
-		_t = rand() % 100;
+	for (i = 0; i < n; i ++) {
+		_t = rand() % n;
 		printf("avl_search(T, %d) = %d\n", _t, avl_search(T, _t));
 	}
 	printf("avl_traveral: ");
 	avl_traveral(T, printout_node);
 	printf("\n");
-	for (i = 0; i < 20; i ++) {
-		_t = rand() % 100;
+	for (i = 0; i < n; i ++) {
+		_t = rand() % n;
 		printf("avl_delete(&T, %d) = %d\n", _t, avl_delete(&T, _t, &lower));
 	}
 	printf("avl_traveral: ");
@@ -425,21 +614,8 @@ void testcase_for_random() {
 
 int main(int argc, const char *argv[])
 {
+	testcase_for_single();
 	testcase_for_random();
-//	TREE T = avl_init();
-//	int taller = 0, lower = 0;
-//
-//	printf("avl_insert(T, 32) = %d\n", avl_insert(&T, 32, &taller));
-//
-//	printf("avl_search(T, 32) = %d\n", avl_search(T, 32));
-//
-//	printf("avl_delete(T, 32) = %d\n", avl_delete(&T, 32, &lower));
-//
-//	printf("avl_traveral: ");
-//	avl_traveral(T, printout_node);
-//	printf("\n");
-//
-//	avl_destory(T);
 
 	return 0;
 }
