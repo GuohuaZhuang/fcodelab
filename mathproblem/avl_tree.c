@@ -296,7 +296,7 @@ PUBLIC int avl_insert(TREE* pT, ELEMENT d, int* ptaller) {
 }
 
 /**
-* @brief AVL tree stack use for store father point in delete node method.
+* @brief AVL tree stack use for store parent point in delete node method.
 */
 typedef struct _AVLTREE_STACK {
 	TREE* pT;
@@ -307,7 +307,7 @@ typedef struct _AVLTREE_STACK {
 * @brief AVL tree stack push.
 *
 * @param pTS stack quote point.
-* @param pT push father AVL tree quote point.
+* @param pT push parent AVL tree quote point.
 */
 void tree_stack_push(AVLTREE_STACK** pTS, TREE* pT) {
 	if (!pTS) { return; }
@@ -316,11 +316,11 @@ void tree_stack_push(AVLTREE_STACK** pTS, TREE* pT) {
 	(*pTS) = _ts;
 }
 /**
-* @brief AVL tree stack front father quote point.
+* @brief AVL tree stack front parent quote point.
 *
 * @param pTS stack quote point.
 *
-* @return first father quote point.
+* @return first parent quote point.
 */
 TREE* tree_stack_front(AVLTREE_STACK** pTS) {
 	if (!pTS) { return NULL; }
@@ -331,7 +331,7 @@ TREE* tree_stack_front(AVLTREE_STACK** pTS) {
 *
 * @param pTS stack quote point.
 *
-* @return pop from stack, and return the pop father quote point.
+* @return pop from stack, and return the pop parent quote point.
 */
 TREE* tree_stack_pop(AVLTREE_STACK** pTS) {
 	if (!pTS) { return NULL; }
@@ -356,7 +356,7 @@ TREE* tree_stack_pop(AVLTREE_STACK** pTS) {
 * Draw the tree, then we will find its logic how to rebalance tree.
 *
 * @param pT tree quote point.
-* @param plower output tree becomes lower for father or not.
+* @param plower output tree becomes lower for parent or not.
 */
 PRIVATE void _avl_left_lower_rebalance(TREE* pT, int* plower) {
 	if ((*pT)->bf == LH) {
@@ -410,7 +410,7 @@ PRIVATE void _avl_left_lower_rebalance(TREE* pT, int* plower) {
 * same logic corresponding with left subtree becomes lower height.
 *
 * @param pT tree quote point.
-* @param plower output tree becomes lower for father or not.
+* @param plower output tree becomes lower for parent or not.
 */
 PRIVATE void _avl_right_lower_rebalance(TREE* pT, int* plower) {
 	if ((*pT)->bf == RH) {
@@ -463,11 +463,11 @@ PRIVATE void _avl_right_lower_rebalance(TREE* pT, int* plower) {
 * means its first left-right child to cover its data value, and replace to 
 * remove the child node. The verbose analysis is the following.
 * if pT has single child or no, then remove pT and attach its child to its 
-* father, now his father bf --, and require rebalance it.
+* parent, now his parent bf --, and require rebalance it.
 * elseif pT has two child, find the front data child, means its first left-right
 * child, and copy the data in pT, and begin to remove this node named Y. As we 
 * know Y has no child or single left child, so we can attach the child to Y's 
-* father. And then require rebalance from Y's father to pT.
+* parent. And then require rebalance from Y's parent to pT.
 * May be the Y should split 2 situation:
 * 	1. the Y is the pT's lchild.
 * 	2. the Y is the pT's lchild's grand right son.
@@ -498,7 +498,7 @@ PRIVATE void _avl_deletenode(TREE* pT, int* plower) {
 			TREE* YF = tree_stack_front(&TS);
 			(*YF)->rchild = Y->lchild;
 			(*plower) = 1; free(Y);
-			// pop all father line and right lower rabalance
+			// pop all parent line and right lower rabalance
 			while (NULL != (YF = tree_stack_pop(&TS))) {
 				if (0 == (*plower)) { continue; }
 				_avl_right_lower_rebalance(YF, plower);
