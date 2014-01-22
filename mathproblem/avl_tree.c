@@ -81,6 +81,16 @@ typedef struct _NODE {
 typedef enum {LH = 1, EH = 0, RH = -1} BF;
 
 /**
+* @brief public methods declaration.
+*/
+PUBLIC TREE avl_init(void);
+PUBLIC void avl_destory(TREE T);
+PUBLIC int avl_search(TREE T, ELEMENT d);
+PUBLIC int avl_insert(TREE* pT, ELEMENT d, int* ptaller);
+PUBLIC int avl_delete(TREE* pT, ELEMENT d, int* plower);
+PUBLIC void avl_traveral(TREE T, void function(NODE*));
+
+/**
 * @brief AVL tree initialize method.
 *
 * @return return AVL tree point.
