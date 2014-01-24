@@ -31,6 +31,13 @@
 * 能组合成多少个单词bing? 字符串长度不超过10000，由于结果可能比较大，请输出对
 * 10^9 + 7取余数之后的结果。
 *
+* The recursion solution is the basic simple method to solve it, I comes out 
+* another more efficency calculate to solve it.
+* First set all character index ordered list, also it is ascending indexs.
+* Then find every bigger number in the heap, it is O(log(n)) times to use.
+* So the maximum use time is (4-1)*(n*n*n)*O(log(n)).
+* 呃，这个貌似只是改进了最后一个count++吧，递归性质还是没有改变。
+*
 * @author firstboy0513
 * @version 0.0.1
 * @date 2014-01-21
