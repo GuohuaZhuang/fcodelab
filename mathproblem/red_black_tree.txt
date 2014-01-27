@@ -1,0 +1,174 @@
+Left-Rotate(T, x) {
+	y = x.right;
+
+	x.right = y.left;
+	if (NIL != y.left) { y.left.parent = x; }
+
+	if (x.parent == NIL) {
+		T.root = y;
+	} else if (x.parent.left == x) {
+		x.parent.left = y;
+	} else {
+		x.parent.right = y;
+	}
+	y.parent = x.parent;
+
+	y.left = x;
+	x.parent = y;
+}
+Right-Rotate(T, y) {
+	x = y.left;
+
+	y.left = x.right;
+	if (NIL != x.right) { x.right.parent = y; }
+
+	if (NIL == y.parent) {
+		T.root = x;
+	} else if (y.parent.left == y) {
+		y.parent.left = x;
+	} else {
+		y.parent.right = x;
+	}
+	x.parent = y.parent;
+
+	x.right = y;
+	y.parent = x;
+}
+
+Insertion
+Property 2 is violated if z is the root, and property 4 is violated if z’s parent is red.
+
+/**
+* @brief Be sure the z element is not already exist in the Red-Black tree.
+*/
+RB-Insert(T, z) {
+	y = T.nil; x = T.root;
+	while (x != T.nil) {
+		y = x;
+		if (z.key < x.key) {
+			x = x.left;
+		else {
+			x = x.right;
+		}
+	}
+
+	if (y == T.nil) {
+		T.root = z;
+	} else if (z.key < y.key) {
+		y.left = z;
+	} else {
+		y.right = z;
+	}
+
+	z.left = z.right = T.nil; z.color = RED;
+	RB-Insert-Fixup(T, z);
+}
+
+RB-Insert-Fixup(T, z) {
+	while (z.p.color == RED) {
+		if (z.p == z.p.p.left) {
+			y = z.p.p.right;
+			if (y.color == RED) {
+				z.p.color = y.color = BLACK;
+				z.p.p.color = RED;
+				z = z.p.p;
+			} else {
+				if (z == z.p.right) {
+					z = z.p;
+					Left-Rotate(T, z);
+				}
+				z.p.color = BLACK;
+				z.p.p.color = RED;
+				Right-Rotate(T, z.p.p);
+			}
+		} else {
+			y = z.p.p.left;
+			if (y.color == RED) {
+				z.p.color = y.color = BLACK;
+				z.p.p.color = RED;
+				z = z.p.p;
+			} else {
+				if (z == z.p.left) {
+					z = z.p;
+					Right-Rotate(T, z);
+				}
+				z.p.color = BLACK;
+				z.p.p.color = RED;
+				Left-Rotate(T, z.p.p);
+			}
+		}
+	}
+	T.root.color = BLACK;
+}
+
+RB-Transplant(T, u, v) {
+	if (u.p == T.nil) {
+		T.root = v;
+	} else {
+		if (u == u.p.left) {
+			u.p.left = v;
+		} else {
+			u.p.right = v;
+		}
+	}
+	v.p = u.p;
+}
+
+RB-Delete(T, z) {
+	y = z;
+	y-original-color = y.color;
+	if (y.left == T.nil) {
+		x = y.right;
+		RB-Transplant(T, z, z.right);
+	} else if (y.right == T.nil) {
+		x = y.left;
+		RB-Transplant(T, z, z,left);
+	} else {
+		y = Tree-minimum(z.right);
+		y-original-color = y.color;
+		x = y.right;
+		if (z == y.p) {
+			x.p = y;
+		} else {
+			RB-Transplant(T, y, y.right);
+			y.right = z.right;
+			y.right.p = y;
+		}
+		RB-Transplant(T, z, y);
+		y.left = z.left;
+		y.left.p = y;
+		y.color = z.color;
+	}
+	if (y-original-color == BLACK) {
+		RB-Delete-Fixup(T, x);
+	}
+}
+
+RB-Delete-Fixup(T, x) {
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
