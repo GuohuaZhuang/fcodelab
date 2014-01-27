@@ -145,6 +145,54 @@ RB-Delete(T, z) {
 }
 
 RB-Delete-Fixup(T, x) {
+	while (x != T.nil && x.color == BLACK) {
+	}
+	if (x.p.left == x) {
+		w = x.p.right;
+		if (w.color == RED) {
+			w.color = BLACK;
+			x.p.color = RED;
+			Left-Rotate(T, x.p);
+			w = x.p.right;
+		}
+		if (w.left.color == BLACK && w.right.color == BLACK) {
+			w.color = RED;
+			x = x.p;
+		} else if (w.right.color == BLACK) {
+			w.left.color = BLACK;
+			w.color = RED;
+			Right-Rotate(T, w);
+			w = x.p.right;
+		}
+		w.color = x.p.color;
+		x.p.color = BLACK;
+		w.right.color = BLACK;
+		Left-Rotate(T, x.p);
+		x = T.root;
+	} else {
+		w = x.p.left;
+		if (w.color = RED) {
+			w.color = BLACK;
+			x.p.color = RED;
+			Right-Rotate(T, x.p);
+			w = x.p.right;
+		}
+		if (w.left.color == BLACK && w.right.color == BLACK) {
+			w.color = RED;
+			x = x.p;
+		} else if (w.left.color == BLACK) {
+			w.right.color = BLACK;
+			w.color = RED;
+			Left-Rotate(T, w);
+			w = x.p.left;
+		}
+		w.color = x.p.color;
+		x.p.color= BLACK;
+		w.left.color = BLACK;
+		Right-Rotate(T, x.p);
+		x = T.root;
+	}
+	x.color = BLACK;
 }
 
 
