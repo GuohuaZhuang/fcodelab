@@ -19,7 +19,6 @@
 * @file rbt.c
 * @brief Red-Black Tree implement in C, and reference from the book 
 * <Introduction to Algorithm> Third Edition.
-* TODO
 * 	1. implement left rotate and right rotate internal method.
 * 	2. implement insert new element method.
 * 	3. implement delete element method.
@@ -245,6 +244,115 @@ int rbt_insert(TREE* T, ELEMENT d) {
 	return 1;
 }
 
+void _rbt_transplant(TREE* T, NODE* u, NODE* v) {
+	if (u->p == T->nil) {
+		T->root = v;
+	} else if (u == u->p->left) {
+		u->p->left = v;
+	} else {
+		u->p->right = v;
+	}
+	v->p = u->p;
+}
+
+void _rbt_delete_fixup(TREE* T, NODE* x) {
+	while (x != T->root && x->color == BLACK) {
+		if (x == x->p->left) {
+			NODE* w = x->p->right;
+			if (w->color == RED) {
+				w->color = BLACK;
+				x->p->color = RED;
+				_rbt_left_rotate(T, x->p);
+				w = x->p->right;
+			}
+			if (w->left->color == BLACK && w->right->color == BLACK) {
+				w->color = RED;
+				x = x->p;
+			} else {
+				if (w->right->color == BLACK) {
+					w->color = RED;
+					w->left->color = BLACK;
+					_rbt_right_rotate(T, w);
+					w = x->p->right;
+				}
+				w->color = x->p->color;
+				x->p->color = BLACK;
+				w->right->color = BLACK;
+				_rbt_left_rotate(T, x->p);
+				x = T->root;
+			}
+		} else { // x == x->p->right
+			NODE* w = x->p->left;
+			if (w->color == RED) {
+				w->color = BLACK;
+				x->p->color = RED;
+				_rbt_right_rotate(T, x->p);
+				w = x->p->left;
+			}
+			if (w->left->color == BLACK && w->right->color == BLACK) {
+				w->color = RED;
+				x = x->p;
+			} else {
+				if (w->left->color == BLACK) {
+					w->color = RED;
+					w->right->color = BLACK;
+					_rbt_left_rotate(T, w);
+					w = x->p->left;
+				}
+				w->color = x->p->color;
+				x->p->color = BLACK;
+				w->left->color = BLACK;
+				_rbt_right_rotate(T, x->p);
+				x = T->root;
+			}
+		}
+	}
+	x->color = BLACK;
+}
+
+NODE* _rbt_tree_minimum(TREE* T, NODE* p) {
+	NODE* r = p;
+	while (r->left != T->nil) {
+		r = r->left;
+	}
+	return r;
+}
+
+int rbt_delete(TREE* T, ELEMENT d) {
+	NODE* p = NULL;
+	if (!_rbt_search(T, d, &p)) { return 0; }
+	NODE* y = p; NODE* x = NULL;
+	COLOR y_original_color = y->color;
+	if (p->left == T->nil) {
+		x = p->right;
+		_rbt_transplant(T, p, p->right);
+	} else if (p->right == T->nil) {
+		x = p->left;
+		_rbt_transplant(T, p, p->left);
+	} else {
+		y = _rbt_tree_minimum(T, p->right);
+		y_original_color = y->color;
+		x = y->right;
+		if (y->p == p) {
+			x->p = y;	// if the x == T->nil, set x->p = y;
+		} else {
+			_rbt_transplant(T, y, y->right);
+			y->right = p->right;
+			y->right->p = y;
+		}
+		_rbt_transplant(T, p, y);
+		y->left = p->left;
+		y->left->p = y;
+		y->color = p->color;
+	}
+
+	if (y_original_color == BLACK) {
+		_rbt_delete_fixup(T, x);
+	}
+	free(p);
+	return 1;
+}
+
 /////////////////////////////// TEST CASE //////////////////////////////////////
 
 void printout_node(NODE* p) { printf("%d ", p->data); }
@@ -259,7 +367,7 @@ void testcase_for_single() {
 
 	printf("rbt_search(T, 32) = %d\n", rbt_search(T, 32));
 
-///	printf("rbt_delete(T, 32) = %d\n", rbt_delete(&T, 32));
+	printf("rbt_delete(T, 32) = %d\n", rbt_delete(T, 32));
 
 	printf("bst_traveral: ");
 	rbt_traveral(T, printout_node);
@@ -290,19 +398,19 @@ void testcase_for_random() {
 	printf("rbt_traveral: ");
 	rbt_traveral(T, printout_node);
 	printf("\n");
-//	for (i = 0; i < n; i ++) {
-//		_t = rand() % n;
-//		printf("rbt_delete(&T, %d) = %d\n", _t, rbt_delete(&T, _t));
-//	}
-//	printf("rbt_traveral: ");
-//	rbt_traveral(T, printout_node);
-//	printf("\n");
+	for (i = 0; i < n; i ++) {
+		_t = rand() % n;
+		printf("rbt_delete(T, %d) = %d\n", _t, rbt_delete(T, _t));
+	}
+	printf("rbt_traveral: ");
+	rbt_traveral(T, printout_node);
+	printf("\n");
 	rbt_destory(T);
 }
 
 int main(int argc, const char *argv[])
 {
-	// testcase_for_single();
+	testcase_for_single();
 	testcase_for_random();
 
 	return 0;
