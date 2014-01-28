@@ -65,6 +65,10 @@ typedef int ELEMENT;
 */
 typedef enum { BLACK = 0, RED = 1 } COLOR;
 
+/**
+* @brief Red-Black tree node struct, with data also named as key, color, and 3
+* point which is parent node point, left child and right child node point.
+*/
 typedef struct _NODE {
 	ELEMENT data;
 	COLOR	color;
@@ -73,11 +77,19 @@ typedef struct _NODE {
 	struct _NODE* right;
 } NODE;
 
+/**
+* @brief Red-Black tree struct with nil node and root point.
+*/
 typedef struct _TREE {
 	struct _NODE* root;
 	struct _NODE* nil;
 } TREE;
 
+/**
+* @brief Red-Black initialize method.
+*
+* @return Red-Black tree.
+*/
 TREE* rbt_init() {
 	TREE* T = (TREE*) malloc(sizeof(TREE));
 	T->nil = (NODE*) malloc(sizeof(NODE));
@@ -86,6 +98,13 @@ TREE* rbt_init() {
 	return T;
 }
 
+/**
+* @brief Red-Black internal release nodes tree, use recursion method to destory
+* from left child and right child subtree.
+*
+* @param T Red-Black tree.
+* @param p subtree node point.
+*/
 void _rbt_node_destory(TREE* T, NODE* p) {
 	if (p != T->nil) {
 		_rbt_node_destory(T, p->left);
@@ -94,12 +113,26 @@ void _rbt_node_destory(TREE* T, NODE* p) {
 	}
 }
 
+/**
+* @brief Red-Black tree destory method.
+*
+* @param T Red-Black tree.
+*/
 void rbt_destory(TREE* T) {
 	_rbt_node_destory(T, T->root);
 	free(T->nil);
 	free(T);
 }
 
+/**
+* @brief Red-Black search method.
+*
+* @param T Red-Black tree.
+* @param d element to search.
+*
+* @return return 1 means search the element success, otherwise return 0 means 
+* not find it in the Red-Black tree.
+*/
 int rbt_search(TREE* T, ELEMENT d) {
 	NODE* x = T->root;
 	while (x != T->nil) {
@@ -114,6 +147,13 @@ int rbt_search(TREE* T, ELEMENT d) {
 	return 0;
 }
 
+/**
+* @brief Red-Black tree internal traveral recursion method.
+*
+* @param T Red-Black tree.
+* @param p subtree node point.
+* @param function traveral a node callback function.
+*/
 void _rbt_traveral(TREE* T, NODE* p, void function(NODE*)) {
 	if (p != T->nil) {
 		_rbt_traveral(T, p->left, function);
@@ -122,10 +162,25 @@ void _rbt_traveral(TREE* T, NODE* p, void function(NODE*)) {
 	}
 }
 
+/**
+* @brief Red-Black tree traveral method.
+*
+* @param T Red-Black tree.
+* @param function traveral a node callback function.
+*/
 void rbt_traveral(TREE* T, void function(NODE*)) {
 	_rbt_traveral(T, T->root, function);
 }
 
+/**
+* @brief Red-Black tree internal method to search the place to insert new node,
+* or to delete found node point.
+*
+* @param T Red-Black tree.
+* @param d element to search.
+* @param p output the node point if found the element is already in the tree,
+* otherwise output the parent node point.
+*/
 int _rbt_search(TREE* T, ELEMENT d, NODE** p) {
 	(*p) = T->nil;
 	NODE* x = T->root;
@@ -142,6 +197,12 @@ int _rbt_search(TREE* T, ELEMENT d, NODE** p) {
 	return 0;
 }
 
+/**
+* @brief Red-Black tree left rotate internal method.
+*
+* @param T Red-Black tree.
+* @param x rotate pivot node.
+*/
 void _rbt_left_rotate(TREE* T, NODE* x) {
 	NODE* r = x->right;
 
@@ -163,6 +224,12 @@ void _rbt_left_rotate(TREE* T, NODE* x) {
 	x->p = r;
 }
 
+/**
+* @brief Red-Black tree right rotate internal method.
+*
+* @param T Red-Black tree.
+* @param x rotate pivot node.
+*/
 void _rbt_right_rotate(TREE* T, NODE* x) {
 	NODE* l = x->left;
 
@@ -184,6 +251,12 @@ void _rbt_right_rotate(TREE* T, NODE* x) {
 	x->p = l;
 }
 
+/**
+* @brief Red-Black tree insert fixup internal method.
+*
+* @param T Red-Black tree.
+* @param s the new node inserted with red color.
+*/
 void _rbt_insert_fixup(TREE* T, NODE* s) {
 	NODE* u = NULL;
 	while (s->p->color == RED) {
@@ -227,6 +300,15 @@ void _rbt_insert_fixup(TREE* T, NODE* s) {
 	T->root->color = BLACK;
 }
 
+/**
+* @brief Red-Black tree insert method.
+*
+* @param T Red-Black tree.
+* @param d element to insert.
+*
+* @return return 1 means insert success, otherwise return 0 means the element is
+* already in the tree and insert failed.
+*/
 int rbt_insert(TREE* T, ELEMENT d) {
 	NODE* p = NULL;
 	if (_rbt_search(T, d, &p)) { return 0; }
@@ -244,6 +326,13 @@ int rbt_insert(TREE* T, ELEMENT d) {
 	return 1;
 }
 
+/**
+* @brief Red-Black tree transplant node u with v node.
+*
+* @param T Red-Black tree.
+* @param u the node be transplant, will be remove from the tree.
+* @param v the node to transplant.
+*/
 void _rbt_transplant(TREE* T, NODE* u, NODE* v) {
 	if (u->p == T->nil) {
 		T->root = v;
@@ -255,6 +344,13 @@ void _rbt_transplant(TREE* T, NODE* u, NODE* v) {
 	v->p = u->p;
 }
 
+/**
+* @brief Red-Black tree delete fixup internal method.
+*
+* @param T Red-Black tree.
+* @param s the deleted node's transplant node, and the original node's color is
+* black. It violate properties of Red-Black tree.
+*/
 void _rbt_delete_fixup(TREE* T, NODE* x) {
 	while (x != T->root && x->color == BLACK) {
 		if (x == x->p->left) {
@@ -310,6 +406,14 @@ void _rbt_delete_fixup(TREE* T, NODE* x) {
 	x->color = BLACK;
 }
 
+/**
+* @brief Red-Black tree to get minimum element in the subtree from node p.
+*
+* @param T Red-Black tree.
+* @param p subtree node point.
+*
+* @return return the minimum node point.
+*/
 NODE* _rbt_tree_minimum(TREE* T, NODE* p) {
 	NODE* r = p;
 	while (r->left != T->nil) {
@@ -318,6 +422,15 @@ NODE* _rbt_tree_minimum(TREE* T, NODE* p) {
 	return r;
 }
 
+/**
+* @brief Red-Black tree delete method.
+*
+* @param T Red-Black tree.
+* @param d element to delete.
+*
+* @return return 1 means delete success, otherwise return 0 means the element is
+* not in the tree and delete failed.
+*/
 int rbt_delete(TREE* T, ELEMENT d) {
 	NODE* p = NULL;
 	if (!_rbt_search(T, d, &p)) { return 0; }
