@@ -26,7 +26,7 @@
 #include <stdlib.h>
 
 /**
- * @brief Red-Black tree public method extern to use or private be invoke.
+ * @brief B tree public method extern to use or private be invoke.
 */
 #define PUBLIC
 #define PRIVATE static
@@ -53,7 +53,7 @@
 typedef int ELEMENT;
 
 /**
-* @brief Red-Black tree node struct, with data also named as key, color, and 3
+* @brief B tree node struct, with data also named as key, color, and 3
 * point which is parent node point, left child and right child node point.
 */
 typedef struct _NODE {
@@ -64,12 +64,19 @@ typedef struct _NODE {
 } NODE;
 
 /**
-* @brief Red-Black tree struct with nil node and root point.
+* @brief B tree struct with nil node and root point.
 */
 typedef struct _TREE {
 	struct _NODE* root;
 	struct _NODE* nil;
 } TREE;
+
+TREE* btree_init();
+void btree_destory(TREE* T);
+int btree_search(TREE* T, ELEMENT d);
+int btree_insert(TREE* T, ELEMENT d);
+int btree_delete(TREE* T, ELEMENT d);
+void btree_traversal(TREE* T, void function(NODE*));
 
 int main(int argc, const char *argv[])
 {
