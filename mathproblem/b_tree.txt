@@ -1,2 +1,28 @@
 B-trees are balance search trees designed to work well on disks or other direct-access secondary storage advices. B-trees are similar to red-black trees, but they are better at minimizing disk I/O operations. Many database systems use B-trees, or variants of B-Trees, to store information.
 B-Trees differ from red-black trees in that B-Tree nodes may have many chlidren, from a few to thousands. That is, the "branching factor" of a B-tree can be quite large, although it useually depends on characteristics of the disk unit used. B-trees differ from red-black trees in that B-tree nodes may have many children, from a few to thousands. That is, the "branching factor" of a B-tree can be quite large, although it useually depends on characteristics of the disk unit used. B-trees exact height of a B-tree can be considerably less than that of a red-black tree, however, because its branching factor.
+
+pseudocode
+
+B-TREE-SEARCH(x, k) {
+	i = 1;
+	while (i <= x.n and k > x.key[i]) {
+		i = i + 1;
+	}
+	if (i <= x.n and k == x.key[i]) {
+		return (x, i);
+	} else if (x.leaf) {
+		return NIL;
+	} else {
+		DISK-READ(x.c[i]);
+		return B-TREE-SEARCH(x.c[i], k);
+	}
+}
+
+B-TREE-CREATE(T) {
+	x = ALLOCATE-NODE();
+	x.leaf = TRUE;
+	x.n = 0;
+	DISK-WRITE(x);
+	T.root = x;
+}
+

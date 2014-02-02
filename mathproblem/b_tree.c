@@ -53,6 +53,11 @@
 typedef int ELEMENT;
 
 /**
+* @brief Boolean type define.
+*/
+typedef enum { FALSE, TRUE } BOOL;
+
+/**
 * @brief B tree node struct, with data also named as key, color, and 3
 * point which is parent node point, left child and right child node point.
 */
@@ -61,6 +66,8 @@ typedef struct _NODE {
 	struct _NODE* p;
 	struct _NODE* left;
 	struct _NODE* right;
+	int n;
+	BOOL leaf;
 } NODE;
 
 /**
@@ -71,12 +78,29 @@ typedef struct _TREE {
 	struct _NODE* nil;
 } TREE;
 
+/**
+* @brief Out use methods of B-Tree structure.
+*/
 TREE* btree_init();
 void btree_destory(TREE* T);
 int btree_search(TREE* T, ELEMENT d);
 int btree_insert(TREE* T, ELEMENT d);
 int btree_delete(TREE* T, ELEMENT d);
 void btree_traversal(TREE* T, void function(NODE*));
+
+/**
+* @brief Internal methods of B-Tree structure.
+*/
+NODE* _btree_allocate_node();
+void _btree_disk_write(NODE* x);
+
+void _btree_init(TREE* T) {
+	NODE* x = _btree_allocate_node();
+	x->leaf = TRUE;
+	x->n = 0;
+	_btree_disk_write(x);
+	T->root = x;
+}
 
 int main(int argc, const char *argv[])
 {
