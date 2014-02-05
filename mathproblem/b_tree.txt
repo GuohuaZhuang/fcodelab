@@ -96,3 +96,29 @@ B-TREE-INSERT-NONFULL(x, k) {
 	}
 }
 
+B-TREE-DELETE procedure
+1. If the key k is in node x and x is a leaf, delete the key k from x.
+2. If the key k is in node x and x is an internal node, do the follwing:
+	a. If the child y tha precedes k in node x has at least t keys, then find 
+	the predecessor k' of k in the subtree rooted at y. Recursively delete k', 
+	and replace k by k' in x. (We can find k' and delete it in a single downward
+	pass.)
+	b. If y has fewer than t keys, then symmetrically, examine the child z that 
+	follows k in node x. If z has at least t keys, then find the successor k' of
+	k in the subtree rooted at z. Recursively delete k' and replace k by k' in 
+	x. (We can find k' and delete it in a single downward pass.)
+	c. Otherwise, if both y and z have only t-1 keys, merge k and all of z into
+	y, so that x loses both k and the pointer to z, and y now contains 2t-1 
+	keys. Then free z and recursively delete k from y.
+3. If the key k is not present in internal node x, determine the root x.c[i] of 
+the appropriate subtree that must contain k, if k is in the tree at all. 
+If x.c[i] of has only t-1 keys, execute step 3a or 3b as necessary to guarantee
+that we descend to a node containing at least t keys. Then finish by recursing
+on the appropriate child of x.
+	a. If x.c[i] has only t-1 keys but has an immediate sibling with at least t 
+	keys, give x.c[i] an extra key by moving a key from x down into x.c[i], 
+	moving a key from x.c[i]'s immediate left or right sibling up into x, and 
+	moving the appropriate child pointer from the sibling into x.c[i].
+	b. If x.c[i] and both of x.c[i]'s immediate siblings have t-1 keys, merge 
+	x.c[i] with one siblin, which involves moving a key from x down into the new
+	merged node to become the median key for that node.
