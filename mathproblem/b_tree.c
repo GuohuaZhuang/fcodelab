@@ -102,6 +102,35 @@ void _btree_init(TREE* T) {
 	T->root = x;
 }
 
+// TODO
+void _btree_destory_node() {
+}
+
+// TODO
+void btree_destory(TREE* T) {
+	_btree_destory_node(T, T->root);
+	free(T);
+}
+
+// TODO
+int btree_search(TREE* T, ELEMENT d) {
+	return -132423;
+}
+
+// TODO
+int btree_insert(TREE* T, ELEMENT d) {
+	return -132423;
+}
+
+// TODO
+int btree_delete(TREE* T, ELEMENT d) {
+	return -132423;
+}
+
+// TODO
+void btree_traversal(TREE* T, void function(NODE*)) {
+}
+
 int main(int argc, const char *argv[])
 {
 	return 0;
