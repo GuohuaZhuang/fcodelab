@@ -90,11 +90,21 @@ typedef struct _NODE {
 } NODE;
 
 /**
-* @brief B tree struct with nil node and root point.
+* @brief search result struct.
+*/
+typedef struct _SEARCH_RET {
+	NODE* x;			// node pointer.
+	int i;				// the index of key.
+} SEARCH_RET;
+
+#define SEARCH_NIL (SEARCH_RET){NIL, 0}
+
+/**
+* @brief B tree struct with root point.
 */
 typedef struct _TREE {
 	struct _NODE* root;
-	struct _NODE* nil;
+	/// struct _NODE* nil;		// the nil, uh, maybe not use.
 } TREE;
 
 /**
@@ -107,12 +117,21 @@ int btree_insert(TREE* T, ELEMENT d);
 int btree_delete(TREE* T, ELEMENT d);
 void btree_traversal(TREE* T, void function(NODE*));
 
+// TODO
+void _btree_disk_read(NODE* x) {
+}
+
+// TODO
+void _btree_disk_write(NODE* x) {
+}
+
 // OK
 /**
 * @brief Internal methods of B-Tree structure.
 */
 NODE* _btree_allocate_node() {
 	NODE* x = (NODE*) malloc(sizeof(NODE));
+	memset(x, 0, sizeof(NODE));
 	x->c = (struct _NODE**) malloc(sizeof(struct _NODE*) * FULL_CHILD_COUNT);
 	x->key = (ELEMENT*) malloc(sizeof(ELEMENT) * FULL_KEY_COUNT);
 	memset(x->c, 0, sizeof(struct _NODE*) * FULL_CHILD_COUNT);
@@ -139,27 +158,17 @@ void _btree_destory_node(NODE* x) {
 
 // TODO
 void btree_destory(TREE* T) {
-	_btree_destory_node(T, T->root);
+	_btree_destory_node(T->root);
 	free(T);
 }
 
-// TODO
-void _btree_disk_read(NODE* x) {
-}
-
-// TODO
-void _btree_disk_write(NODE* x) {
-}
-
-// OK
-int _btree_search(NODE* x, ELEMENT k, NODE** px, int* pi) {
+SEARCH_RET _btree_search(NODE* x, ELEMENT k) {
 	int i = 0;
-	while (i <= x->n && k < x->key[i]) { i ++; }
-	if (i <= x->n && k == x->key[i]) {
-		*px = x; *pi = i;
-		return 1;
+	while (i < x->n && k < x->key[i]) { i ++; }
+	if (i < x->n && k == x->key[i]) {
+		return (SEARCH_RET){x, i};
 	} else if (x->leaf) {
-		return 0;
+		return SEARCH_NIL;
 	} else {
 		_btree_disk_read(x->c[i]);
 		return _btree_search(x->c[i], k);
@@ -168,9 +177,13 @@ int _btree_search(NODE* x, ELEMENT k, NODE** px, int* pi) {
 
 // OK
 int btree_search(TREE* T, ELEMENT k) {
-	NODE* x = NIL;
-	int i = 0;
-	return _btree_search(T->root, k, &x, &i);
+	SEARCH_RET sr;
+	sr = _btree_search(T->root, k);
+	if (NIL == sr.x) {
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 // OK
@@ -203,23 +216,23 @@ void _btree_split_child(NODE* x, int i) {
 	_btree_disk_write(x);
 }
 
-// TODO
-// It's some more complicted here...
-void btree_insert(TREE* T, ELEMENT d) {
-	NODE* r = T->root;
-	if (r->n == FULL_KEY_COUNT) {
-	} else {
-	}
-}
-
-// TODO
-int btree_delete(TREE* T, ELEMENT d) {
-	return -132423;
-}
-
-// TODO
-void btree_traversal(TREE* T, void function(NODE*)) {
-}
+/// // TODO
+/// // It's some more complicted here...
+/// void btree_insert(TREE* T, ELEMENT d) {
+/// 	NODE* r = T->root;
+/// 	if (r->n == FULL_KEY_COUNT) {
+/// 	} else {
+/// 	}
+/// }
+/// 
+/// // TODO
+/// int btree_delete(TREE* T, ELEMENT d) {
+/// 	return -132423;
+/// }
+/// 
+/// // TODO
+/// void btree_traversal(TREE* T, void function(NODE*)) {
+/// }
 
 int main(int argc, const char *argv[])
 {
