@@ -65,16 +65,28 @@ typedef int ELEMENT;
 typedef enum { FALSE, TRUE } BOOL;
 
 /**
-* @brief B tree node struct, with data also named as key, color, and 3
-* point which is parent node point, left child and right child node point.
+* @brief B tree node struct, with x.n and leaf boolean, and n keys and n+1 
+* children pointers. The keys seperate the ranges of keys stored in each 
+* subtree. All leaves have the same depth, which is the tree's height h.
+* Nodes have lower and upper bounds on the number of keys they can contain.
+* We express these bounds in terms of a fixed integer t>=2 called the minimum 
+* degree of the B-tree.
+* 	a. Every node other than the root must have at least t-1 keys. Every 
+* 	internal node other than the root must thus has at least t children. If the
+* 	tree is nonempty, the root must have at least one key.
+* 	b. Every node may contain at most 2t-1 keys. Therefore, an internal node may
+* 	have at most 2t children. We say that a node is full if it contains exactly 
+* 	2t-1 keys.
 */
 typedef struct _NODE {
-///	ELEMENT data;
-///	struct _NODE* p;
-	int n;
-	BOOL leaf;
-	ELEMENT* key;
-	struct _NODE** c;
+	int n;				// the numbers of keys currently stored in the node.
+	BOOL leaf;			// a boolean value that is TRUE if x is a leaf and FALSE
+						// if x is an Internal node.
+	ELEMENT* key;		// x.n keys themselves, from key1 to keyn stored in 
+						// nondecreasing order.
+	struct _NODE** c;	// if node is internal, it contains x.n+1 pointers from
+						// c1 to cn+1 to its children. Leaf nodes have no 
+						// children, and the ci attributes are undefined.
 } NODE;
 
 /**
