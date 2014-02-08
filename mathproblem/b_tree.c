@@ -110,7 +110,7 @@ typedef struct _TREE {
 /**
 * @brief Out use methods of B-Tree structure.
 */
-TREE* btree_init();
+TREE* btree_create();
 void btree_destory(TREE* T);
 int btree_search(TREE* T, ELEMENT d);
 int btree_insert(TREE* T, ELEMENT d);
@@ -226,25 +226,59 @@ void _btree_split_child(NODE* x, int i) {
 	_btree_disk_write(x);
 }
 
-/// // TODO
-/// // It's some more complicted here...
-/// void btree_insert(TREE* T, ELEMENT d) {
-/// 	NODE* r = T->root;
-/// 	if (r->n == FULL_KEY_COUNT) {
-/// 	} else {
-/// 	}
-/// }
-/// 
-/// // TODO
-/// int btree_delete(TREE* T, ELEMENT d) {
-/// 	return -132423;
-/// }
-/// 
-/// // TODO
-/// void btree_traversal(TREE* T, void function(NODE*)) {
-/// }
+// OK
+void _btree_insert_nonfull(NODE* x, ELEMENT k) {
+	int i = x->n-1;
+	if (x->leaf) {
+		while (i >= 0 && k < x->key[i]) { x->key[i+1] = x->key[i]; i --; }
+		x->key[i+1] = k;
+		x->n ++;
+		_btree_disk_write(x);
+	} else {
+		while (i >= 0 && k < x->key[i]) { i --; }
+		i ++;
+		_btree_disk_read(x->c[i]);
+		if (FULL_KEY_COUNT == x->c[i]->n) {
+			_btree_split_child(x, i);
+			if (k > x->key[i]) { i ++; }
+		}
+		_btree_insert_nonfull(x->c[i], k);
+	}
+}
+
+// OK
+int btree_insert(TREE* T, ELEMENT k) {
+	if (btree_search(T, k)) { return 0; }
+	NODE* r = T->root;
+	if (FULL_KEY_COUNT == r->n) {
+		NODE* s = _btree_allocate_node();
+		T->root = s;
+		s->leaf = FALSE;
+		s->n = 0;
+		s->c[0] = r;
+		_btree_split_child(s, 0);
+		_btree_insert_nonfull(s, k);
+	} else {
+		_btree_insert_nonfull(r, k);
+	}
+	return 1;
+}
+
+void testcase_for_single() {
+	TREE* T = btree_create();
+
+	printf("btree_insert(T, 32) = %d\n", btree_insert(T, 32));
+
+	printf("btree_search(T, 32) = %d\n", btree_search(T, 32));
+
+	// printf("btree_delete(T, 32) = %d\n", btree_delete(T, 32));
+
+	btree_destory(T);
+}
 
 int main(int argc, const char *argv[])
 {
+	testcase_for_single();
+
 	return 0;
 }
