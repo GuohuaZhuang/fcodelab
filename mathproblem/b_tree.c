@@ -139,6 +139,7 @@ NODE* _btree_allocate_node() {
 	return x;
 }
 
+// OK
 void _btree_create(TREE* T) {
 	NODE* x = _btree_allocate_node();
 	x->leaf = TRUE;
@@ -147,21 +148,32 @@ void _btree_create(TREE* T) {
 	T->root = x;
 }
 
-// TODO
+// OK
+PUBLIC TREE* btree_create() {
+	TREE* T = (TREE*) malloc(sizeof(TREE));
+	memset(T, 0, sizeof(TREE));
+	_btree_create(T);
+	return T;
+}
+
+// OK
 void _btree_destory_node(NODE* x) {
 	int i = 0;
-	for (i = 0; i <= x->n; i ++) {
-		_btree_destory_node(x->c[i]);
+	if (!(x->leaf)) {
+		for (i = 0; i <= x->n; i ++) {
+			_btree_destory_node(x->c[i]);
+		}
 	}
 	free(x);
 }
 
-// TODO
-void btree_destory(TREE* T) {
+// OK
+PUBLIC void btree_destory(TREE* T) {
 	_btree_destory_node(T->root);
 	free(T);
 }
 
+// OK
 SEARCH_RET _btree_search(NODE* x, ELEMENT k) {
 	int i = 0;
 	while (i < x->n && k < x->key[i]) { i ++; }
@@ -176,7 +188,7 @@ SEARCH_RET _btree_search(NODE* x, ELEMENT k) {
 }
 
 // OK
-int btree_search(TREE* T, ELEMENT k) {
+PUBLIC int btree_search(TREE* T, ELEMENT k) {
 	SEARCH_RET sr;
 	sr = _btree_search(T->root, k);
 	if (NIL == sr.x) {
@@ -187,29 +199,27 @@ int btree_search(TREE* T, ELEMENT k) {
 }
 
 // OK
+/**
+* @brief B-tree split child.
+* Require the x->c[i] child node has full keys.
+*
+* @param x x node's i child.
+* @param i index of the child pointer.
+*/
 void _btree_split_child(NODE* x, int i) {
 	NODE* z = _btree_allocate_node();
 	NODE* y = x->c[i];
 	z->leaf = y->leaf;
 	z->n = BT-1;
 	int j = 0;
-	for (j = 0; j <= BT-1; j ++) {
-		z->key[j] = y->key[j+BT];
-	}
-	if (!y->leaf) {
-		for (j = 0; j <= BT; j ++) {
-			z->c[j] = y->c[j+BT];
-		}
-	}
+	for (j = 0; j < BT-1; j ++) { z->key[j] = y->key[BT+j]; }
+	if (!(y->leaf)) { for (j = 0; j < BT; j ++) { z->c[j] = y->c[BT+j]; } }
 	y->n = BT-1;
-	for (j = x->n+1; j >= i+1; j --) {
-		x->c[j+1] = x->c[j];
-	}
+
+	for (j = x->n; j >= i+1; j --) { x->c[j+1] = x->c[j]; }
 	x->c[i+1] = z;
-	for (j = x->n; j >= i; j --) {
-		x->key[j+1] = x->key[j];
-	}
-	x->key[i] = y->key[i];
+	for (j = x->n-1; j >= i; j --) { x->key[j+1] = x->key[j]; }
+	x->key[i] = y->key[BT-1];
 	x->n ++;
 	_btree_disk_write(y);
 	_btree_disk_write(z);
