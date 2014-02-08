@@ -135,7 +135,7 @@ NODE* _btree_allocate_node() {
 	x->c = (struct _NODE**) malloc(sizeof(struct _NODE*) * FULL_CHILD_COUNT);
 	x->key = (ELEMENT*) malloc(sizeof(ELEMENT) * FULL_KEY_COUNT);
 	memset(x->c, 0, sizeof(struct _NODE*) * FULL_CHILD_COUNT);
-	memset(x->key, 0, sizeof(struct _NODE*) * FULL_KEY_COUNT);
+	memset(x->key, 0, sizeof(ELEMENT) * FULL_KEY_COUNT);
 	return x;
 }
 
@@ -156,19 +156,28 @@ PUBLIC TREE* btree_create() {
 	return T;
 }
 
+void _btree_free_node(NODE* x) {
+	if (!x) { return; }
+	free(x->c);
+	free(x->key);
+	free(x);
+}
+
 // OK
 void _btree_destory_node(NODE* x) {
+	if (!x) { return; }
 	int i = 0;
 	if (!(x->leaf)) {
 		for (i = 0; i <= x->n; i ++) {
 			_btree_destory_node(x->c[i]);
 		}
 	}
-	free(x);
+	_btree_free_node(x);
 }
 
 // OK
 PUBLIC void btree_destory(TREE* T) {
+	if (!T) { return; }
 	_btree_destory_node(T->root);
 	free(T);
 }
@@ -176,8 +185,8 @@ PUBLIC void btree_destory(TREE* T) {
 // OK
 SEARCH_RET _btree_search(NODE* x, ELEMENT k) {
 	int i = 0;
-	while (i < x->n && k < x->key[i]) { i ++; }
-	if (i < x->n && k == x->key[i]) {
+	while (i < x->n && GT(k, x->key[i])) { i ++; }
+	if (i < x->n && EQ(k, x->key[i])) {
 		return (SEARCH_RET){x, i};
 	} else if (x->leaf) {
 		return SEARCH_NIL;
@@ -212,14 +221,14 @@ void _btree_split_child(NODE* x, int i) {
 	z->leaf = y->leaf;
 	z->n = BT-1;
 	int j = 0;
-	for (j = 0; j < BT-1; j ++) { z->key[j] = y->key[BT+j]; }
+	for (j = 0; j < BT-1; j ++) { ELEMENT_COPY(z->key[j], y->key[BT+j]); }
 	if (!(y->leaf)) { for (j = 0; j < BT; j ++) { z->c[j] = y->c[BT+j]; } }
 	y->n = BT-1;
 
 	for (j = x->n; j >= i+1; j --) { x->c[j+1] = x->c[j]; }
 	x->c[i+1] = z;
-	for (j = x->n-1; j >= i; j --) { x->key[j+1] = x->key[j]; }
-	x->key[i] = y->key[BT-1];
+	for (j = x->n-1; j >= i; j --) { ELEMENT_COPY(x->key[j+1], x->key[j]); }
+	ELEMENT_COPY(x->key[i], y->key[BT-1]);
 	x->n ++;
 	_btree_disk_write(y);
 	_btree_disk_write(z);
@@ -230,17 +239,20 @@ void _btree_split_child(NODE* x, int i) {
 void _btree_insert_nonfull(NODE* x, ELEMENT k) {
 	int i = x->n-1;
 	if (x->leaf) {
-		while (i >= 0 && k < x->key[i]) { x->key[i+1] = x->key[i]; i --; }
-		x->key[i+1] = k;
+		while (i >= 0 && LT(k, x->key[i])) {
+			ELEMENT_COPY(x->key[i+1], x->key[i]);
+			i --;
+		}
+		ELEMENT_COPY(x->key[i+1], k);
 		x->n ++;
 		_btree_disk_write(x);
 	} else {
-		while (i >= 0 && k < x->key[i]) { i --; }
+		while (i >= 0 && LT(k, x->key[i])) { i --; }
 		i ++;
 		_btree_disk_read(x->c[i]);
 		if (FULL_KEY_COUNT == x->c[i]->n) {
 			_btree_split_child(x, i);
-			if (k > x->key[i]) { i ++; }
+			if (GT(k, x->key[i])) { i ++; }
 		}
 		_btree_insert_nonfull(x->c[i], k);
 	}
@@ -264,6 +276,20 @@ int btree_insert(TREE* T, ELEMENT k) {
 	return 1;
 }
 
+/////////////////////////////// TEST CASE //////////////////////////////////////
+
+void printout_node(NODE* x) {
+	printf("[");
+	int i = 0;
+	for (i = 0; i < x->n; i ++) {
+		printf("%d ", x->key[i]);
+	}
+	printf("]\n");
+}
+
+/**
+* @brief test case for single insert, search and delete method.
+*/
 void testcase_for_single() {
 	TREE* T = btree_create();
 
@@ -276,9 +302,41 @@ void testcase_for_single() {
 	btree_destory(T);
 }
 
+#include <time.h>
+
+/**
+* @brief test case for random number insert, search and delete.
+*/
+void testcase_for_random() {
+	TREE* T = btree_create();
+	int i = 0, n = 100;
+	int _t = 0;
+	srand(time(NULL));
+	for (i = 0; i < n; i ++) {
+		_t = rand() % n;
+		printf("btree_insert(T, %d) = %d\n", _t, btree_insert(T, _t));
+	}
+	for (i = 0; i < n; i ++) {
+		_t = rand() % n;
+		printf("btree_search(T, %d) = %d\n", _t, btree_search(T, _t));
+	}
+//	printf("btree_traveral: ");
+//	btree_traveral(T, printout_node);
+//	printf("\n");
+//	for (i = 0; i < n; i ++) {
+//		_t = rand() % n;
+//		printf("btree_delete(T, %d) = %d\n", _t, btree_delete(T, _t));
+//	}
+//	printf("btree_traveral: ");
+//	btree_traveral(T, printout_node);
+//	printf("\n");
+	btree_destory(T);
+}
+
 int main(int argc, const char *argv[])
 {
-	testcase_for_single();
+	// testcase_for_single();
+	testcase_for_random();
 
 	return 0;
 }
