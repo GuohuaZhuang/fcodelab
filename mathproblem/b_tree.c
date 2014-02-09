@@ -41,7 +41,6 @@
 /**
 * @brief Element compare EQ as equal, LT as little than, GT as greate than.
 */
-
 #define EQ(a, b) (a == b)
 #define LT(a, b) (a < b)
 #define GT(a, b) (a > b)
@@ -198,6 +197,7 @@ SEARCH_RET _btree_search(NODE* x, ELEMENT k) {
 
 // OK
 PUBLIC int btree_search(TREE* T, ELEMENT k) {
+	if (!T || !(T->root)) { return 0; }
 	SEARCH_RET sr;
 	sr = _btree_search(T->root, k);
 	if (NIL == sr.x) {
@@ -232,6 +232,38 @@ void _btree_split_child(NODE* x, int i) {
 	x->n ++;
 	_btree_disk_write(y);
 	_btree_disk_write(z);
+	_btree_disk_write(x);
+}
+
+/**
+* @brief B-tree merge child.
+* 1. Require x is not a leaf node.
+* 2. Not require the x->c[i] and x->c[i+1] child has BT-1 keys.
+*
+* @param x x node's i child. it must lest than x->n-1, let i+1 index valid.
+* @param i index of the left child pointer.
+*/
+void _btree_merge_child(NODE* x, int i) {
+	int j = 0;
+	NODE* y = x->c[i];
+	NODE* z = x->c[i+1];
+	// move x->key[i] to y and remove x->c[i+1]
+	// move x->key and x->c
+	// move z to y
+	int yn = y->n, zn = z->n; // assume yn may equal BT-1
+	y->key[yn] = x->key[i];
+	for (j = 0; j < zn; j ++) { ELEMENT_COPY(y->key[yn+1+j], z->key[j]); }
+	if (!(z->leaf)) { for (j = 0; j <= zn; j ++) { y->c[yn+1+j] = z->c[j]; } }
+	y->n = yn+1+zn;
+
+	for (j = i+1; j < x->n; j ++) { ELEMENT_COPY(x->key[j-1], x->key[j]); }
+	for (j = i+1; j < x->n; j ++) { x->c[j] = x->c[j+1]; }
+	x->n --;
+
+	_btree_free_node(z);
+
+	_btree_disk_write(y);
+	/// _btree_disk_write(z); delete z in the disk file.
 	_btree_disk_write(x);
 }
 
@@ -276,16 +308,134 @@ int btree_insert(TREE* T, ELEMENT k) {
 	return 1;
 }
 
+// TODO 
+// You should careful to implement it!
+void _btree_delete_balance(NODE* x, int i) {
+	/// if (x->c[i]->n < BT-1) {
+	/// 	printf("[GOD] the BT predirect is real occur!!!\n");
+	/// 	exit(-1);
+	/// }
+	if (x->c[i]->n >= BT-1) { return; }
+	/// if (!(x->c[i]->leaf)) { return; } // 嗯，不一定要leaf
+	if (i > 0 && x->c[i-1]->n >= BT) {
+		// left immediate sibling
+		// before to move origin key[] and c[] in x->c[i] move next
+		// Let y indicate x->c[i] node, and z indicate x->c[i-1] node.
+		// 1. move y next step, let y->key[0] and y->c[0] blank.
+		// 2. move x->key[i-1] to y->key[0], z->key[zn-1] to x->key[i-1].
+		// 3. move z->c[zn] to y->c[0].
+		// 4. update y and z n keys count.
+		NODE *y = x->c[i], *z = x->c[i-1];
+		int j = 0, yn = y->n, zn = z->n;
+		for (j = yn-1; j >= 0; j --) { y->key[j+1] = y->key[j]; }	// step 1
+		for (j = yn; j >= 0; j --) { y->c[j+1] = y->c[j]; }      	// step 1
+		ELEMENT_COPY(y->key[0], x->key[i-1]);   					// step 2
+		ELEMENT_COPY(x->key[i-1], z->key[zn-1]);					// step 2
+		y->c[0] = z->c[zn];											// step 3
+		y->n ++; z->n --;											// step 4
+	} else if (i < x->n-1 && x->c[i+1]->n >= BT) {
+		// right immediate sibling
+		// after to move origin key[] and c[] in x->c[i+1] move front
+		// let y indicate x->c[i] node, and z indicate x->c[i+1] node.
+		// 1. move x->key[i] to y->key[yn], z->key[0] to x->key[i].
+		// 2. move z->c[0] to y->c[yn+1].
+		// 3. move z front step, cover the z->key[0] and z->c[0].
+		// 4. update y and z n keys count.
+		NODE *y = x->c[i], *z = x->c[i+1];
+		int j = 0, yn = y->n, zn = z->n;
+		ELEMENT_COPY(y->key[yn], x->key[i]);						// step 1
+		ELEMENT_COPY(x->key[i], z->key[0]); 						// step 1
+		y->c[yn+1] = z->c[0];               						// step 2
+		for (j = 0; j < zn-1; j ++) { z->key[j] = z->key[j+1]; }	// step 3
+		for (j = 0; j < zn; j ++) { z->c[j] = z->c[j+1]; }			// step 3
+		y->n ++; z->n --;											// step 4
+	} else {
+		// merge with one sibling
+		if (i > 0) { // merge left
+			// first move c->key[i] into x->c[i], let x->c[i]->n == BT-1.
+			// or modify the merge method let it can merge not BT-1 length.
+			_btree_merge_child(x, i-1);
+		} else { // merge right
+			// first move c->key[i] into x->c[i], let x->c[i]->n == BT-1.
+			// or modify the merge method let it can merge not BT-1 length.
+			_btree_merge_child(x, i);
+		}
+	}
+}
+
+// TODO
+void _btree_delete(NODE* x, ELEMENT k) {
+	int j = 0;
+	if (x->leaf) {
+		int i = x->n-1;
+		while (i >= 0 && LT(k, x->key[i])) { i --; }
+		if (i >= 0 && EQ(k, x->key[i])) {
+			for (j = i+1; j <= x->n-1; j ++) {
+				ELEMENT_COPY(x->key[j-1], x->key[j]);
+			}
+			x->n --;
+		}
+	} else {
+		int i = x->n-1;
+		while (i >= 0 && LT(k, x->key[i])) { i --; }
+		if (i >= 0 && EQ(k, x->key[i])) { // k is in a internal node
+			///// 2a, 2b, 2c here...
+			if (x->c[i]->n > BT-1) {
+				ELEMENT k_r = x->c[i]->key[x->c[i]->n-1];
+				ELEMENT_COPY(x->key[i], k_r);
+				_btree_delete(x->c[i], k_r); _btree_delete_balance(x, i);
+			} else if (x->c[i+1]->n > BT-1) {
+				ELEMENT k_r = x->c[i+1]->key[x->c[i+1]->n-1];
+				ELEMENT_COPY(x->key[i], k_r);
+				_btree_delete(x->c[i+1], k_r); _btree_delete_balance(x, i);
+			} else {
+				_btree_merge_child(x, i);
+				_btree_delete(x->c[i], k); _btree_delete_balance(x, i);
+			}
+		} else {
+			i ++;
+			_btree_disk_read(x->c[i]);
+			_btree_delete(x->c[i], k); _btree_delete_balance(x, i);
+		}
+	}
+}
+
+int btree_delete(TREE* T, ELEMENT k) {
+	if (!btree_search(T, k)) { return 0; }
+	_btree_delete(T->root, k);
+	return 1;
+}
+
+/**
+* @brief B tree internal traveral recursion method.
+*
+* @param p subtree node point.
+* @param function traveral a node callback function.
+*/
+void _btree_traveral(NODE* x, void function(ELEMENT)) {
+	if (x) {
+		int i = 0;
+		for (i = 0; i < x->n; i ++) {
+			_btree_traveral(x->c[i], function);
+			function(x->key[i]);
+		}
+		_btree_traveral(x->c[i], function);
+	}
+}
+
+/**
+* @brief B tree traveral method.
+*
+* @param T B tree.
+* @param function traveral a element callback function.
+*/
+void btree_traveral(TREE* T, void function(ELEMENT)) {
+	_btree_traveral(T->root, function);
+}
+
 /////////////////////////////// TEST CASE //////////////////////////////////////
 
-void printout_node(NODE* x) {
-	printf("[");
-	int i = 0;
-	for (i = 0; i < x->n; i ++) {
-		printf("%d ", x->key[i]);
-	}
-	printf("]\n");
-}
+void printout_node(ELEMENT k) { printf("%d ", k); }
 
 /**
 * @brief test case for single insert, search and delete method.
@@ -297,7 +447,13 @@ void testcase_for_single() {
 
 	printf("btree_search(T, 32) = %d\n", btree_search(T, 32));
 
-	// printf("btree_delete(T, 32) = %d\n", btree_delete(T, 32));
+	printf("btree_delete(T, 32) = %d\n", btree_delete(T, 32));
+
+	printf("btree_search(T, 32) = %d\n", btree_search(T, 32));
+
+	printf("btree_traveral: ");
+	btree_traveral(T, printout_node);
+	printf("\n");
 
 	btree_destory(T);
 }
@@ -320,22 +476,26 @@ void testcase_for_random() {
 		_t = rand() % n;
 		printf("btree_search(T, %d) = %d\n", _t, btree_search(T, _t));
 	}
-//	printf("btree_traveral: ");
-//	btree_traveral(T, printout_node);
-//	printf("\n");
-//	for (i = 0; i < n; i ++) {
-//		_t = rand() % n;
-//		printf("btree_delete(T, %d) = %d\n", _t, btree_delete(T, _t));
-//	}
-//	printf("btree_traveral: ");
-//	btree_traveral(T, printout_node);
-//	printf("\n");
+
+	printf("btree_traveral: ");
+	btree_traveral(T, printout_node);
+	printf("\n");
+
+	for (i = 0; i < n; i ++) {
+		_t = rand() % n;
+		printf("btree_delete(T, %d) = %d\n", _t, btree_delete(T, _t));
+	}
+
+	printf("btree_traveral: ");
+	btree_traveral(T, printout_node);
+	printf("\n");
+
 	btree_destory(T);
 }
 
 int main(int argc, const char *argv[])
 {
-	// testcase_for_single();
+	testcase_for_single();
 	testcase_for_random();
 
 	return 0;
