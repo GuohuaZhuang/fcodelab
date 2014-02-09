@@ -34,9 +34,9 @@
 
 #define NIL		NULL
 
-#define BT		4
-#define FULL_KEY_COUNT (2*BT-1)
-#define FULL_CHILD_COUNT (2*BT)
+#define BT					4
+#define FULL_KEY_COUNT 		(2*BT-1)
+#define FULL_CHILD_COUNT 	(2*BT)
 
 /**
 * @brief Element compare EQ as equal, LT as little than, GT as greate than.
@@ -69,7 +69,7 @@ typedef enum { FALSE, TRUE } BOOL;
 * subtree. All leaves have the same depth, which is the tree's height h.
 * Nodes have lower and upper bounds on the number of keys they can contain.
 * We express these bounds in terms of a fixed integer t>=2 called the minimum 
-* degree of the B-tree.
+* degree of the B tree.
 * 	a. Every node other than the root must have at least t-1 keys. Every 
 * 	internal node other than the root must thus has at least t children. If the
 * 	tree is nonempty, the root must have at least one key.
@@ -103,32 +103,47 @@ typedef struct _SEARCH_RET {
 */
 typedef struct _TREE {
 	struct _NODE* root;
-	/// struct _NODE* nil;		// the nil, uh, maybe not use.
 } TREE;
 
 /**
-* @brief Out use methods of B-Tree structure.
+* @brief Out use methods of B tree structure.
 */
-TREE* btree_create();
-void btree_destory(TREE* T);
-int btree_search(TREE* T, ELEMENT d);
-int btree_insert(TREE* T, ELEMENT d);
-int btree_delete(TREE* T, ELEMENT d);
-void btree_traversal(TREE* T, void function(NODE*));
+PUBLIC TREE* btree_create();
+PUBLIC void btree_destory(TREE* T);
+PUBLIC int btree_search(TREE* T, ELEMENT d);
+PUBLIC int btree_insert(TREE* T, ELEMENT d);
+PUBLIC int btree_delete(TREE* T, ELEMENT d);
+PUBLIC void btree_traversal(TREE* T, void function(NODE*));
 
-// TODO
-void _btree_disk_read(NODE* x) {
-}
-
-// TODO
-void _btree_disk_write(NODE* x) {
-}
-
-// OK
 /**
-* @brief Internal methods of B-Tree structure.
+* @brief Internal use method of B tree structure.
 */
-NODE* _btree_allocate_node() {
+PRIVATE void _btree_disk_read(NODE* x);
+PRIVATE void _btree_disk_write(NODE* x);
+PRIVATE NODE* _btree_allocate_node();
+PRIVATE void _btree_create(TREE* T);
+PRIVATE void _btree_free_node(NODE* x);
+PRIVATE void _btree_destory_node(NODE* x);
+PRIVATE SEARCH_RET _btree_search(NODE* x, ELEMENT k);
+PRIVATE void _btree_split_child(NODE* x, int i);
+PRIVATE void _btree_merge_child(NODE* x, int i);
+PRIVATE void _btree_insert_nonfull(NODE* x, ELEMENT k);
+PRIVATE void _btree_delete_balance(NODE* x, int i);
+PRIVATE void _btree_delete(NODE* x, ELEMENT k);
+PRIVATE void _btree_traveral(NODE* x, void function(ELEMENT));
+
+// TODO
+PRIVATE void _btree_disk_read(NODE* x) {
+}
+
+// TODO
+PRIVATE void _btree_disk_write(NODE* x) {
+}
+
+/**
+* @brief Internal methods of B tree structure.
+*/
+PRIVATE NODE* _btree_allocate_node() {
 	NODE* x = (NODE*) malloc(sizeof(NODE));
 	memset(x, 0, sizeof(NODE));
 	x->c = (struct _NODE**) malloc(sizeof(struct _NODE*) * FULL_CHILD_COUNT);
@@ -138,8 +153,12 @@ NODE* _btree_allocate_node() {
 	return x;
 }
 
-// OK
-void _btree_create(TREE* T) {
+/**
+* @brief B tree internal create method.
+*
+* @param T B tree had malloc memory.
+*/
+PRIVATE void _btree_create(TREE* T) {
 	NODE* x = _btree_allocate_node();
 	x->leaf = TRUE;
 	x->n = 0;
@@ -147,7 +166,11 @@ void _btree_create(TREE* T) {
 	T->root = x;
 }
 
-// OK
+/**
+* @brief B tree create and initizlization method.
+*
+* @return return the initizlization B tree.
+*/
 PUBLIC TREE* btree_create() {
 	TREE* T = (TREE*) malloc(sizeof(TREE));
 	memset(T, 0, sizeof(TREE));
@@ -155,15 +178,25 @@ PUBLIC TREE* btree_create() {
 	return T;
 }
 
-void _btree_free_node(NODE* x) {
+/**
+* @brief B tree internal free node.
+* This method is just free the node memory, not include its children memorys.
+*
+* @param x the node pointer.
+*/
+PRIVATE void _btree_free_node(NODE* x) {
 	if (!x) { return; }
 	free(x->c);
 	free(x->key);
 	free(x);
 }
 
-// OK
-void _btree_destory_node(NODE* x) {
+/**
+* @brief B tree internal destory method.
+*
+* @param x subtree root use to recursive destory.
+*/
+PRIVATE void _btree_destory_node(NODE* x) {
 	if (!x) { return; }
 	int i = 0;
 	if (!(x->leaf)) {
@@ -174,15 +207,27 @@ void _btree_destory_node(NODE* x) {
 	_btree_free_node(x);
 }
 
-// OK
+/**
+* @brief B tree destory method.
+*
+* @param T B tree.
+*/
 PUBLIC void btree_destory(TREE* T) {
 	if (!T) { return; }
 	_btree_destory_node(T->root);
 	free(T);
 }
 
-// OK
-SEARCH_RET _btree_search(NODE* x, ELEMENT k) {
+/**
+* @brief B tree internal search.
+*
+* @param x subtree root.
+* @param k the element to search.
+*
+* @return return the search result, if not find the element, it will return 
+* SEARCH_NIL, which the node pointer is NIL.
+*/
+PRIVATE SEARCH_RET _btree_search(NODE* x, ELEMENT k) {
 	int i = 0;
 	while (i < x->n && GT(k, x->key[i])) { i ++; }
 	if (i < x->n && EQ(k, x->key[i])) {
@@ -195,7 +240,15 @@ SEARCH_RET _btree_search(NODE* x, ELEMENT k) {
 	}
 }
 
-// OK
+/**
+* @brief B tree search method.
+*
+* @param T B tree.
+* @param k the element to search.
+*
+* @return return 1 means find the element is in the tree, otherwise return 0 
+* means the element can not find in the tree.
+*/
 PUBLIC int btree_search(TREE* T, ELEMENT k) {
 	if (!T || !(T->root)) { return 0; }
 	SEARCH_RET sr;
@@ -207,20 +260,24 @@ PUBLIC int btree_search(TREE* T, ELEMENT k) {
 	}
 }
 
-// OK
 /**
-* @brief B-tree split child.
+* @brief B tree split child.
 * Require the x->c[i] child node has full keys.
 *
 * @param x x node's i child.
 * @param i index of the child pointer.
 */
-void _btree_split_child(NODE* x, int i) {
+PRIVATE void _btree_split_child(NODE* x, int i) {
 	NODE* z = _btree_allocate_node();
 	NODE* y = x->c[i];
 	z->leaf = y->leaf;
 	z->n = BT-1;
 	int j = 0;
+	// Split x->c[i] into y and z, the y indicate x->c[i], and z indicate the 
+	// newer allocate node.
+	// 1. move end part of y key[] and c[] into z, also update both n and leaf.
+	// 2. move x key[] and c[] next step let x->c[i+1] and x->key[i] blank.
+	// 3. move the middle element in y into the x->c[i+1] and x->key[i].
 	for (j = 0; j < BT-1; j ++) { ELEMENT_COPY(z->key[j], y->key[BT+j]); }
 	if (!(y->leaf)) { for (j = 0; j < BT; j ++) { z->c[j] = y->c[BT+j]; } }
 	y->n = BT-1;
@@ -236,21 +293,23 @@ void _btree_split_child(NODE* x, int i) {
 }
 
 /**
-* @brief B-tree merge child.
-* 1. Require x is not a leaf node.
-* 2. Not require the x->c[i] and x->c[i+1] child has BT-1 keys.
+* @brief B tree merge child.
+* Some preconditions:
+*   1. Require x is not a leaf node.
+*   2. Not require the x->c[i] and x->c[i+1] child has BT-1 keys.
 *
 * @param x x node's i child. it must lest than x->n-1, let i+1 index valid.
 * @param i index of the left child pointer.
 */
-void _btree_merge_child(NODE* x, int i) {
-	int j = 0;
+PRIVATE void _btree_merge_child(NODE* x, int i) {
 	NODE* y = x->c[i];
 	NODE* z = x->c[i+1];
-	// move x->key[i] to y and remove x->c[i+1]
-	// move x->key and x->c
-	// move z to y
-	int yn = y->n, zn = z->n; // assume yn may equal BT-1
+	int j = 0, yn = y->n, zn = z->n;
+	// Merge x->c[i] and x->c[i+1] node into x->c[i].
+	// Let y indicate x->c[i] node, and z indicate x->c[i+1] node.
+	// 1. move x->key[i] to y->key[yn];
+	// 2. move z's key[] and c[] to the end of y node, also update y->n.
+	// 3. move x's key[] and c[] front step to cover x->key[i] and x->c[i+1].
 	y->key[yn] = x->key[i];
 	for (j = 0; j < zn; j ++) { ELEMENT_COPY(y->key[yn+1+j], z->key[j]); }
 	if (!(z->leaf)) { for (j = 0; j <= zn; j ++) { y->c[yn+1+j] = z->c[j]; } }
@@ -260,15 +319,20 @@ void _btree_merge_child(NODE* x, int i) {
 	for (j = i+1; j < x->n; j ++) { x->c[j] = x->c[j+1]; }
 	x->n --;
 
-	_btree_free_node(z);
-
 	_btree_disk_write(y);
 	/// _btree_disk_write(z); delete z in the disk file.
 	_btree_disk_write(x);
+
+	_btree_free_node(z);
 }
 
-// OK
-void _btree_insert_nonfull(NODE* x, ELEMENT k) {
+/**
+* @brief B tree internal insert element into non-full node method.
+*
+* @param x the subtree root.
+* @param k the element to insert.
+*/
+PRIVATE void _btree_insert_nonfull(NODE* x, ELEMENT k) {
 	int i = x->n-1;
 	if (x->leaf) {
 		while (i >= 0 && LT(k, x->key[i])) {
@@ -290,8 +354,16 @@ void _btree_insert_nonfull(NODE* x, ELEMENT k) {
 	}
 }
 
-// OK
-int btree_insert(TREE* T, ELEMENT k) {
+/**
+* @brief B tree insert method.
+*
+* @param T B tree.
+* @param k the element to insert.
+*
+* @return return 1 means insert success, otherwise return 0 means not insert it
+* as the element is already include in the B tree.
+*/
+PUBLIC int btree_insert(TREE* T, ELEMENT k) {
 	if (btree_search(T, k)) { return 0; }
 	NODE* r = T->root;
 	if (FULL_KEY_COUNT == r->n) {
@@ -308,15 +380,14 @@ int btree_insert(TREE* T, ELEMENT k) {
 	return 1;
 }
 
-// TODO 
-// You should careful to implement it!
-void _btree_delete_balance(NODE* x, int i) {
-	/// if (x->c[i]->n < BT-1) {
-	/// 	printf("[GOD] the BT predirect is real occur!!!\n");
-	/// 	exit(-1);
-	/// }
+/**
+* @brief B tree internal balance after delete method.
+*
+* @param x the subtree root.
+* @param i the x->c[i] child delete one element.
+*/
+PRIVATE void _btree_delete_balance(NODE* x, int i) {
 	if (x->c[i]->n >= BT-1) { return; }
-	/// if (!(x->c[i]->leaf)) { return; } // 嗯，不一定要leaf
 	if (i > 0 && x->c[i-1]->n >= BT) {
 		// left immediate sibling
 		// before to move origin key[] and c[] in x->c[i] move next
@@ -351,11 +422,11 @@ void _btree_delete_balance(NODE* x, int i) {
 		y->n ++; z->n --;											// step 4
 	} else {
 		// merge with one sibling
-		if (i > 0) { // merge left
+		if (i > 0) { // merge left sibling
 			// first move c->key[i] into x->c[i], let x->c[i]->n == BT-1.
 			// or modify the merge method let it can merge not BT-1 length.
 			_btree_merge_child(x, i-1);
-		} else { // merge right
+		} else { // merge right sibling
 			// first move c->key[i] into x->c[i], let x->c[i]->n == BT-1.
 			// or modify the merge method let it can merge not BT-1 length.
 			_btree_merge_child(x, i);
@@ -363,8 +434,13 @@ void _btree_delete_balance(NODE* x, int i) {
 	}
 }
 
-// TODO
-void _btree_delete(NODE* x, ELEMENT k) {
+/**
+* @brief B tree internal delete from subtree root.
+*
+* @param x subtree root.
+* @param k element to delete.
+*/
+PRIVATE void _btree_delete(NODE* x, ELEMENT k) {
 	int j = 0;
 	if (x->leaf) {
 		int i = x->n-1;
@@ -379,7 +455,6 @@ void _btree_delete(NODE* x, ELEMENT k) {
 		int i = x->n-1;
 		while (i >= 0 && LT(k, x->key[i])) { i --; }
 		if (i >= 0 && EQ(k, x->key[i])) { // k is in a internal node
-			///// 2a, 2b, 2c here...
 			if (x->c[i]->n > BT-1) {
 				ELEMENT k_r = x->c[i]->key[x->c[i]->n-1];
 				ELEMENT_COPY(x->key[i], k_r);
@@ -400,7 +475,16 @@ void _btree_delete(NODE* x, ELEMENT k) {
 	}
 }
 
-int btree_delete(TREE* T, ELEMENT k) {
+/**
+* @brief B tree delete method.
+*
+* @param T B tree.
+* @param k the element to delete.
+*
+* @return return 1 means delete success, otherwise return 0 means not delete it
+* as the element k is not include in the B tree.
+*/
+PUBLIC int btree_delete(TREE* T, ELEMENT k) {
 	if (!btree_search(T, k)) { return 0; }
 	_btree_delete(T->root, k);
 	return 1;
@@ -412,7 +496,7 @@ int btree_delete(TREE* T, ELEMENT k) {
 * @param p subtree node point.
 * @param function traveral a node callback function.
 */
-void _btree_traveral(NODE* x, void function(ELEMENT)) {
+PRIVATE void _btree_traveral(NODE* x, void function(ELEMENT)) {
 	if (x) {
 		int i = 0;
 		for (i = 0; i < x->n; i ++) {
@@ -429,7 +513,7 @@ void _btree_traveral(NODE* x, void function(ELEMENT)) {
 * @param T B tree.
 * @param function traveral a element callback function.
 */
-void btree_traveral(TREE* T, void function(ELEMENT)) {
+PUBLIC void btree_traveral(TREE* T, void function(ELEMENT)) {
 	_btree_traveral(T->root, function);
 }
 
