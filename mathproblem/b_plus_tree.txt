@@ -1,0 +1,17 @@
+A B+ tree is an n-ary tree with a variable but often large number of children per node. A B+ tree consists of a root, internal nodes and leaves. The root may be either a leaf or a node with two or more children. [comes from wikipedia]
+B+ tree is similar to B tree, with a few slight differences:
+	1. All data is stored at the leaf nodes (leaf pages); all other nodes (index pages) only store keys.
+	2. Leaf pages are linked to each other.
+	3. Keys may be duplicated; every key to the right of a particular key is >= to that key.
+
+B+ tree operatoration procedure.
+
+B+ tree Insertion
+	1. Insert at bottom level.
+	2. If leaf page overflows, split page and copy middle element to next index page.
+	3. If index page overflows, split page and move middle element to next index page.
+
+B+ tree Deletion
+	1. Delete key and data from leaf page.
+	2. If leaf page underflows, merge with sibling and delete key in between them.
+	3. If index page underflows, merge with sibling and move down key in between them.
