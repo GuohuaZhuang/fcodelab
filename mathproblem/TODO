@@ -21,7 +21,17 @@ readline_方向键_shell
 
 数据结构之了解Ｂ家族其它树
 	实现B-Tree
+		Definition(1h) [OK]
+		search(1h) [OK]
+		create & destory(1h) [OK]
+		insertion(3h) [OK]
+		deletion(3h) [OK]
+		summary & test (2h) [OK]
 	实现B+Tree
+		Read bpt.c from amittai.com (1d) [OK]
+		Write simple implement in C reference from 080802.pdf (1d) [DOING]
+		Read real use db application. (2d) [TODO]
+		Write simple real use key-value db. (2d) [TODO]
 	使用B+树构建一个小型应用数据库
 
 数据结构之Ｒ树
