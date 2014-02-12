@@ -101,7 +101,7 @@ PRIVATE NODE* _bptree_allocate_node();
 PRIVATE void _bptree_create(TREE* T);
 PRIVATE void _bptree_free_node(NODE* x);
 PRIVATE void _bptree_destory_node(NODE* x);
-/// PRIVATE SEARCH_RET _bptree_search(NODE* x, ELEMENT k);
+PRIVATE SEARCH_RET _bptree_search(NODE* x, ELEMENT k);
 /// PRIVATE void _bptree_split_child(NODE* x, int i);
 /// PRIVATE void _bptree_merge_child(NODE* x, int i);
 /// PRIVATE void _bptree_insert_nonfull(NODE* x, ELEMENT k);
@@ -193,6 +193,52 @@ PUBLIC void bptree_destory(TREE* T) {
 	if (!T) { return; }
 	_bptree_destory_node(T->root);
 	free(T);
+}
+
+/**
+* @brief B+ tree internal search.
+* Keys may be duplicated; Every key to the right of a particular key is > to 
+* that key, and corresponding the left of a particular key is <= to that key.
+*
+* @param x subtree root.
+* @param k the element to search.
+*
+* @return return the search result, if not find the element, it will return 
+* SEARCH_NIL, which the node pointer is NIL.
+*/
+PRIVATE SEARCH_RET _bptree_search(NODE* x, ELEMENT k) {
+	int i = 0;
+	while (i < x->n && GT(k, x->key[i])) { i ++; }
+	if (x->leaf) {
+		if (i < x->n && EQ(k, x->key[i])) {
+			return (SEARCH_RET){x, i};
+		} else {
+			return SEARCH_NIL;
+		}
+	} else {
+		_bptree_disk_read(x->c[i]);
+		return _bptree_search(x->c[i], k);
+	}
+}
+
+/**
+* @brief B+ tree search method.
+*
+* @param T B+ tree.
+* @param k the element to search.
+*
+* @return return 1 means find the element is in the tree, otherwise return 0 
+* means the element can not find in the tree.
+*/
+PUBLIC int bptree_search(TREE* T, ELEMENT k) {
+	if (!T || !(T->root)) { return 0; }
+	SEARCH_RET sr;
+	sr = _bptree_search(T->root, k);
+	if (NIL == sr.x) {
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 
