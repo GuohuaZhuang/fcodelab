@@ -498,6 +498,7 @@ PUBLIC int btree_delete(TREE* T, ELEMENT k) {
 */
 PRIVATE void _btree_traveral(NODE* x, void function(ELEMENT)) {
 	if (x) {
+		_btree_disk_read(x);
 		int i = 0;
 		for (i = 0; i < x->n; i ++) {
 			_btree_traveral(x->c[i], function);

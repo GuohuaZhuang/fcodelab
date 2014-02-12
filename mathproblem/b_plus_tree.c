@@ -10,9 +10,9 @@
 
 #define NIL		NULL
 
-#define BT					4
-#define FULL_KEY_COUNT 		(2*BT-1)
-#define FULL_CHILD_COUNT 	(2*BT)
+#define ORDER_B				4
+#define FULL_KEY_COUNT 		(ORDER_B-1)
+#define FULL_CHILD_COUNT 	(ORDER_B)
 
 /**
 * @brief Element compare EQ as equal, LT as little than, GT as greate than.
@@ -59,9 +59,9 @@ typedef struct _NODE {
 						// if x is an Internal node.
 	ELEMENT* key;		// x.n keys themselves, from key1 to keyn stored in 
 						// nondecreasing order.
-	struct _NODE** c;	// if node is internal, it contains x.n+1 pointers from
-						// c1 to cn+1 to its children. Leaf nodes have no 
-						// children, and the ci attributes are undefined.
+	void** c;			// if node is internal, it contains x.n+1 pointers from
+						// c1 to cn+1 to its children. Leaf node contains key
+						// value record pointers.
 } NODE;
 
 /**
@@ -79,6 +79,7 @@ typedef struct _SEARCH_RET {
 */
 typedef struct _TREE {
 	struct _NODE* root;
+	struct _NODE* leftmost;
 } TREE;
 
 /**
@@ -91,15 +92,15 @@ PUBLIC int bptree_insert(TREE* T, ELEMENT d);
 PUBLIC int bptree_delete(TREE* T, ELEMENT d);
 PUBLIC void bptree_traversal(TREE* T, void function(NODE*));
 
-/// /**
-/// * @brief Internal use method of B+ tree structure.
-/// */
-/// PRIVATE void _bptree_disk_read(NODE* x);
-/// PRIVATE void _bptree_disk_write(NODE* x);
-/// PRIVATE NODE* _bptree_allocate_node();
-/// PRIVATE void _bptree_create(TREE* T);
-/// PRIVATE void _bptree_free_node(NODE* x);
-/// PRIVATE void _bptree_destory_node(NODE* x);
+/**
+* @brief Internal use method of B+ tree structure.
+*/
+PRIVATE void _bptree_disk_read(NODE* x);
+PRIVATE void _bptree_disk_write(NODE* x);
+PRIVATE NODE* _bptree_allocate_node();
+PRIVATE void _bptree_create(TREE* T);
+PRIVATE void _bptree_free_node(NODE* x);
+PRIVATE void _bptree_destory_node(NODE* x);
 /// PRIVATE SEARCH_RET _bptree_search(NODE* x, ELEMENT k);
 /// PRIVATE void _bptree_split_child(NODE* x, int i);
 /// PRIVATE void _bptree_merge_child(NODE* x, int i);
@@ -114,6 +115,125 @@ PRIVATE void _bptree_disk_read(NODE* x) {
 
 // TODO
 PRIVATE void _bptree_disk_write(NODE* x) {
+}
+
+/**
+* @brief Internal methods of B+ tree structure.
+*/
+PRIVATE NODE* _bptree_allocate_node() {
+	NODE* x = (NODE*) malloc(sizeof(NODE));
+	memset(x, 0, sizeof(NODE));
+	x->c = (void**) malloc(sizeof(void*) * FULL_CHILD_COUNT);
+	x->key = (ELEMENT*) malloc(sizeof(ELEMENT) * FULL_KEY_COUNT);
+	memset(x->c, 0, sizeof(void*) * FULL_CHILD_COUNT);
+	memset(x->key, 0, sizeof(ELEMENT) * FULL_KEY_COUNT);
+	return x;
+}
+
+/**
+* @brief B+ tree internal create method.
+*
+* @param T B+ tree had malloc memory.
+*/
+PRIVATE void _bptree_create(TREE* T) {
+	NODE* x = _bptree_allocate_node();
+	x->leaf = TRUE;
+	x->n = 0;
+	_bptree_disk_write(x);
+	T->root = x;
+}
+
+/**
+* @brief B+ tree create and initizlization method.
+*
+* @return return the initizlization B+ tree.
+*/
+PUBLIC TREE* bptree_create() {
+	TREE* T = (TREE*) malloc(sizeof(TREE));
+	memset(T, 0, sizeof(TREE));
+	_bptree_create(T);
+	return T;
+}
+
+/**
+* @brief B+ tree internal free node.
+* This method is just free the node memory, not include its children memorys.
+*
+* @param x the node pointer.
+*/
+PRIVATE void _bptree_free_node(NODE* x) {
+	if (!x) { return; }
+	free(x->c);
+	free(x->key);
+	free(x);
+}
+
+/**
+* @brief B+ tree internal destory method.
+*
+* @param x subtree root use to recursive destory.
+*/
+PRIVATE void _bptree_destory_node(NODE* x) {
+	if (!x) { return; }
+	int i = 0;
+	if (!(x->leaf)) {
+		for (i = 0; i <= x->n; i ++) {
+			_bptree_destory_node(x->c[i]);
+		}
+	}
+	_bptree_free_node(x);
+}
+
+/**
+* @brief B+ tree destory method.
+*
+* @param T B+ tree.
+*/
+PUBLIC void bptree_destory(TREE* T) {
+	if (!T) { return; }
+	_bptree_destory_node(T->root);
+	free(T);
+}
+
+
+
+
+
+
+
+
+
+
+
+/**
+* @brief B+ tree internal traveral recursion method.
+* This traveral is not like the B tree traveral from root to leaf, b+ tree use
+* its leftmost node pointer to traveral in sequence order.
+*
+* @param p subtree node point.
+* @param function traveral a node callback function.
+*/
+PRIVATE void _bptree_traveral(NODE* leftmost, void function(ELEMENT)) {
+	if (NIL == leftmost) { return; }
+	int i = 0;
+	NODE* p = leftmost;
+	while (NIL != p) {
+		_bptree_disk_read(p);
+		for (i = 0; i < p->n; i ++) {
+			function(p->key[i]);
+		}
+		p = p->c[ORDER_B-1];
+	}
+}
+
+/**
+* @brief B+ tree traveral method.
+*
+* @param T B+ tree.
+* @param function traveral a element callback function.
+*/
+PUBLIC void bptree_traveral(TREE* T, void function(ELEMENT)) {
+	_bptree_traveral(T->leftmost, function);
 }
 
 /////////////////////////////// TEST CASE //////////////////////////////////////
