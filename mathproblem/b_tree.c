@@ -18,6 +18,9 @@
 /**
 * @file b_tree.c
 * @brief B tree implement in C.
+* references:
+* 	<Introduction to Algorithms> Third edition, Thomas H.Cormen, Charles 
+* 	    E.Leiserson, Ronald L.Rivest, Clifford Stein.
 * @author firstboy0513
 * @version 0.0.1
 * @date 2014-02-01
@@ -34,6 +37,9 @@
 
 #define NIL		NULL
 
+/**
+ * @brief the balance factor of B tree, and full key and children count.
+*/
 #define BT					4
 #define FULL_KEY_COUNT 		(2*BT-1)
 #define FULL_CHILD_COUNT 	(2*BT)
@@ -315,8 +321,10 @@ PRIVATE void _btree_merge_child(NODE* x, int i) {
 	if (!(z->leaf)) { for (j = 0; j <= zn; j ++) { y->c[yn+1+j] = z->c[j]; } }
 	y->n = yn+1+zn;
 
-	for (j = i+1; j < x->n; j ++) { ELEMENT_COPY(x->key[j-1], x->key[j]); }
-	for (j = i+1; j < x->n; j ++) { x->c[j] = x->c[j+1]; }
+	for (j = i+1; j < x->n; j ++) {
+		ELEMENT_COPY(x->key[j-1], x->key[j]);
+		x->c[j] = x->c[j+1];
+	}
 	x->n --;
 
 	_btree_disk_write(y);
@@ -446,7 +454,7 @@ PRIVATE void _btree_delete(NODE* x, ELEMENT k) {
 		int i = x->n-1;
 		while (i >= 0 && LT(k, x->key[i])) { i --; }
 		if (i >= 0 && EQ(k, x->key[i])) {
-			for (j = i+1; j <= x->n-1; j ++) {
+			for (j = i+1; j < x->n; j ++) {
 				ELEMENT_COPY(x->key[j-1], x->key[j]);
 			}
 			x->n --;
@@ -487,6 +495,11 @@ PRIVATE void _btree_delete(NODE* x, ELEMENT k) {
 PUBLIC int btree_delete(TREE* T, ELEMENT k) {
 	if (!btree_search(T, k)) { return 0; }
 	_btree_delete(T->root, k);
+	NODE* r = T->root;
+	if (0 == r->n) {
+		T->root = r->c[0];
+		_btree_free_node(r);
+	}
 	return 1;
 }
 

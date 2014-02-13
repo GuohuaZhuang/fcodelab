@@ -1,3 +1,29 @@
+/* Copyright (C) 
+* 2014 - firstboy0513
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+* 
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+* 
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+* 
+*/
+/**
+* @file b_plus_tree.c
+* @brief B+ tree implement in C.
+* references:
+* 	http://en.wikipedia.org/wiki/B%2B_tree
+* @author firstboy0513
+* @version 0.0.1
+* @date 2014-02-13
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +37,11 @@
 
 #define NIL		NULL
 
+/**
+ * @brief the order, or branching factor, ORDER_B of a B+ tree measures the 
+ * capacity of nodes (i.e., the number of children nodes) for internal nodes in
+ * the tree.
+*/
 #define ORDER_B				4
 #define FULL_KEY_COUNT 		(ORDER_B)
 #define FULL_CHILD_COUNT 	(ORDER_B+1)
@@ -80,7 +111,6 @@ typedef struct _SEARCH_RET {
 */
 typedef struct _TREE {
 	struct _NODE* root;
-///	struct _NODE* leftmost;
 } TREE;
 
 /**
@@ -104,10 +134,10 @@ PRIVATE void _bptree_free_node(NODE* x);
 PRIVATE void _bptree_destory_node(NODE* x);
 PRIVATE SEARCH_RET _bptree_search(NODE* x, ELEMENT k);
 PRIVATE void _bptree_split_child(NODE* x, int i);
-/// PRIVATE void _bptree_merge_child(NODE* x, int i);
+PRIVATE void _bptree_merge_child(NODE* x, int i);
 PRIVATE void _bptree_insert_nonfull(NODE* x, ELEMENT k);
-/// PRIVATE void _bptree_delete_balance(NODE* x, int i);
-/// PRIVATE void _bptree_delete(NODE* x, ELEMENT k);
+PRIVATE void _bptree_delete_balance(NODE* x, int i);
+PRIVATE void _bptree_delete(NODE* x, ELEMENT k);
 PRIVATE void _bptree_traveral(NODE* x, void function(ELEMENT));
 PRIVATE NODE* _bptree_leftmost(TREE* T);
 
@@ -340,15 +370,193 @@ PUBLIC int bptree_insert(TREE* T, ELEMENT k) {
 	return 1;
 }
 
+/**
+* @brief B+ tree merge child.
+*
+* @param x x node's i child. it must lest than x->n-1, let i+1 index valid.
+* @param i index of the left child pointer.
+*/
+PRIVATE void _bptree_merge_child(NODE* x, int i) {
+	NODE* y = x->c[i];
+	NODE* z = x->c[i+1];
+	int j = 0, yn = y->n, zn = z->n;
+	// Merge x->c[i] and x->c[i+1] node into x->c[i].
+	// Let y indicate x->c[i] node, and z indicate x->c[i+1] node.
+	// if (y is a leaf node) {
+	//     1. move z->key[] and z->c[] into the end of y, and update y->n.
+	//     2. remove x->key[i] and x->c[i+1], and reduce x->n.
+	// } else { // y is an internal node
+	//     1. move x->key[i] to y->key[yn];
+	//     2. move z's key[] and c[] to the end of y node, also update y->n.
+	//     3. remove x->key[i] and x->c[i+1], and reduce x->n.
+	// }
+	if (y->leaf) {
+		for (j = 0; j < zn; j ++) {
+			ELEMENT_COPY(y->key[yn+j], z->key[j]); y->c[yn+j] = z->c[j];
+		}
+		y->c[ORDER_B-1] = z->c[ORDER_B-1]; // copy the sequence pointer
+		y->n = yn+zn;
+	} else {
+		y->key[yn] = x->key[i];
+		for (j = 0; j < zn; j ++) {
+			ELEMENT_COPY(y->key[yn+1+j], z->key[j]); y->c[yn+1+j] = z->c[j];
+		}
+		y->c[yn+1+j] = z->c[j];
+		y->n = yn+1+zn;
+	}
 
+	for (j = i+1; j < x->n; j ++) {
+		ELEMENT_COPY(x->key[j-1], x->key[j]);
+		x->c[j] = x->c[j+1];
+	}
+	x->n --;
 
+	_bptree_disk_write(y);
+	/// _bptree_disk_write(z); delete z in the disk file.
+	_bptree_disk_write(x);
 
+	_bptree_free_node(z);
+}
 
+/**
+* @brief B+ tree internal balance after delete method.
+*
+* @param x the subtree root.
+* @param i the x->c[i] child delete one element.
+*/
+PRIVATE void _bptree_delete_balance(NODE* x, int i) {
+	int INTERNAL_LOWER_LIMIT = (int)ceil((double)ORDER_B/2);
+	int LEAF_LOWER_LIMIT = (int)floor((double)ORDER_B/2);
+	NODE* y = x->c[i];
+	if (y->leaf && y->n >= LEAF_LOWER_LIMIT) { return; }
+	if (!(y->leaf) && y->n >= INTERNAL_LOWER_LIMIT) { return; }
+	if (i > 0 && (
+		(y->leaf && ((NODE*)(x->c[i-1]))->n > LEAF_LOWER_LIMIT) || 
+		(!(y->leaf) && ((NODE*)(x->c[i-1]))->n > INTERNAL_LOWER_LIMIT) )) {
+		// left immediate sibling
+		// before to move origin key[] and c[] in x->c[i] move next
+		// let y indicate x->c[i] node, and z indicate x->c[i-1] node.
+		// if (y is a leaf node) {
+		//     1. move y next step, let y->key[0] and y->c[0] blank.
+		//     2. move z->key[zn-1] and z->c[zn-1] into y->key[0] and y->c[0].
+		//     3. modify x->key[i-1] = y->key[0].
+		//     4. update y and z n keys count.
+		// } else { // y is an internal node
+		//     1. move y next step, let y->key[0] and y->c[0] blank.
+		//     2. move x->key[i-1] to y->key[0], z->key[zn-1] to x->key[i-1].
+		//     3. move z->c[zn] to y->c[0].
+		//     4. update y and z n keys count.
+		// }
+		NODE* z = x->c[i-1];
+		int j = 0, yn = y->n, zn = z->n;
+		y->c[yn+1] = y->c[yn];										// step 1
+		for (j = yn-1; j >= 0; j --) {								// step 1
+			y->key[j+1] = y->key[j]; y->c[j+1] = y->c[j];			// step 1
+		}															// step 1
+		if (y->leaf) {												// leaf
+			ELEMENT_COPY(y->key[0], z->key[zn-1]);					// step 2
+			y->c[0] = z->c[zn-1];									// step 2
+			ELEMENT_COPY(x->key[i-1], y->key[0]);					// step 3
+		} else {													// internal
+			ELEMENT_COPY(y->key[0], x->key[i-1]);   				// step 2
+			ELEMENT_COPY(x->key[i-1], z->key[zn-1]);				// step 2
+			y->c[0] = z->c[zn];										// step 3
+		}
+		y->n ++; z->n --;											// step 4
+	} else if (i < x->n-1 && (
+		(y->leaf && ((NODE*)(x->c[i+1]))->n > LEAF_LOWER_LIMIT) || 
+		(!(y->leaf) && ((NODE*)(x->c[i+1]))->n > INTERNAL_LOWER_LIMIT) )) {
+		// right immediate sibling
+		// after to move origin key[] and c[] in x->c[i+1] move front
+		// let y indicate x->c[i] node, and z indicate x->c[i+1] node.
+		// if (y is a leaf node) {
+		//     1. move z->key[0] to y->key[yn] and z->c[0] to y->c[yn].
+		//     2. modify x->key[i] = z->key[1].
+		//     3. move z front step, cover the z->key[0] and z->c[0].
+		//     4. update y->n and z->n.
+		// } else { // y is an internal node
+		//     1. move x->key[i] to y->key[yn], z->key[0] to x->key[i].
+		//     2. move z->c[0] to y->c[yn+1].
+		//     2. move z front step, cover the z->key[0] and z->c[0].
+		//     4. update y and z n keys count.
+		// }
+		NODE* z = x->c[i+1];
+		int j = 0, yn = y->n, zn = z->n;
+		if (y->leaf) {												// leaf
+			ELEMENT_COPY(y->key[yn], z->key[0]);					// step 1
+			y->c[yn] = z->c[0];                 					// step 1
+			ELEMENT_COPY(x->key[i], z->key[1]); 					// step 2
+		} else {													// internal
+			ELEMENT_COPY(y->key[yn], x->key[i]);					// step 1
+			ELEMENT_COPY(x->key[i], z->key[0]); 					// step 1
+			y->c[yn+1] = z->c[0];               					// step 2
+		}
+		for (j = 1; j < zn; j ++) {									// step 3
+			z->key[j-1] = z->key[j]; z->c[j-1] = z->c[j];			// step 3
+		}                                                			// step 3
+		z->c[j-1] = z->c[j];                             			// step 3
+		y->n ++; z->n --;											// step 4
+	} else {
+		// merge with one sibling
+		if (i > 0) { // merge left sibling
+			// first move c->key[i] into x->c[i], let x->c[i]->n == BT-1.
+			// or modify the merge method let it can merge not BT-1 length.
+			_bptree_merge_child(x, i-1);
+		} else { // merge right sibling
+			// first move c->key[i] into x->c[i], let x->c[i]->n == BT-1.
+			// or modify the merge method let it can merge not BT-1 length.
+			_bptree_merge_child(x, i);
+		}
+	}
+}
 
+// OK
+/**
+* @brief B+ tree internal delete from subtree root.
+*
+* @param x subtree root.
+* @param k element to delete.
+*/
+PRIVATE void _bptree_delete(NODE* x, ELEMENT k) {
+	int j = 0;
+	if (x->leaf) {
+		int i = x->n-1;
+		while (i >= 0 && LT(k, x->key[i])) { i --; }
+		if (i >= 0 && EQ(k, x->key[i])) {
+			for (j = i+1; j < x->n; j ++) {
+				ELEMENT_COPY(x->key[j-1], x->key[j]);
+				x->c[j-1] = x->c[j];
+			}
+			x->n --;
+		}
+	} else {
+		int i = x->n-1;
+		while (i >= 0 && LT(k, x->key[i])) { i --; }
+		i ++;
+		_bptree_disk_read(x->c[i]);
+		_bptree_delete(x->c[i], k); _bptree_delete_balance(x, i);
+	}
+}
 
-
-
-
+/**
+* @brief B+ tree delete method.
+*
+* @param T B+ tree.
+* @param k the element to delete.
+*
+* @return return 1 means delete success, otherwise return 0 means not delete it
+* as the element k is not include in the B+ tree.
+*/
+PUBLIC int bptree_delete(TREE* T, ELEMENT k) {
+	if (!bptree_search(T, k)) { return 0; }
+	_bptree_delete(T->root, k);
+	NODE* r = T->root;
+	if (0 == r->n) {
+		T->root = r->c[0];
+		_bptree_free_node(r);
+	}
+	return 1;
+}
 
 /**
 * @brief B+ tree internal traveral recursion method.
@@ -412,7 +620,7 @@ void testcase_for_single() {
 
 	printf("bptree_search(T, 32) = %d\n", bptree_search(T, 32));
 
-	/// printf("bptree_delete(T, 32) = %d\n", bptree_delete(T, 32));
+	printf("bptree_delete(T, 32) = %d\n", bptree_delete(T, 32));
 
 	printf("bptree_search(T, 32) = %d\n", bptree_search(T, 32));
 
@@ -446,14 +654,14 @@ void testcase_for_random() {
 	bptree_traveral(T, printout_node);
 	printf("\n");
 
-//	for (i = 0; i < n; i ++) {
-//		_t = rand() % n;
-//		printf("bptree_delete(T, %d) = %d\n", _t, bptree_delete(T, _t));
-//	}
-//
-//	printf("bptree_traveral: ");
-//	bptree_traveral(T, printout_node);
-//	printf("\n");
+	for (i = 0; i < n; i ++) {
+		_t = rand() % n;
+		printf("bptree_delete(T, %d) = %d\n", _t, bptree_delete(T, _t));
+	}
+
+	printf("bptree_traveral: ");
+	bptree_traveral(T, printout_node);
+	printf("\n");
 
 	bptree_destory(T);
 }
