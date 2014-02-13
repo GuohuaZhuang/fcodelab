@@ -28,10 +28,17 @@ readline_方向键_shell
 		deletion(3h) [OK]
 		summary & test (2h) [OK]
 	实现B+Tree
-		Read bpt.c from amittai.com (1d) [OK]
-		Write simple implement in C reference from 080802.pdf (1d) [DOING]
+		Read bpt.c from amittai.com (1d) [OK bpt.c has some bugs!]
+		Write simple implement in C reference from 080802.pdf (1d) [OK]
 		Read real use db application. (2d) [TODO]
+			1. use QDBM C APIs. (3h)
+			2. read abstract struture of QDBM. (3h)
+			3. read the core B+ tree implement in QDBM. (5h)
+			4. others. (4h)
 		Write simple real use key-value db. (2d) [TODO]
+			1. write abstract API and struture. (5h)
+			2. write the core B+ tree implement. (5h)
+			3. others. (5h)
 	使用B+树构建一个小型应用数据库
 
 数据结构之Ｒ树
