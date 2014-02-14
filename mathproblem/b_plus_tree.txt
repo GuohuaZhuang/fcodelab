@@ -15,3 +15,61 @@ B+ tree Deletion
 	1. Delete key and data from leaf page.
 	2. If leaf page underflows, merge with sibling and delete key in between them.
 	3. If index page underflows, merge with sibling and move down key in between them.
+
+Other procedure from wikipedia.
+=================================
+
+Search
+The root of a B+ Tree represents the whole range of values in the tree, where every internal node is a subinterval.
+We are looking for a value k in the B+ Tree. Starting from the root, we are looking for the leaf which may contain the value k. At each node, we figure out which internal pointer we should follow. An internal B+ Tree node has at move d<=b children, where every one of them represents a diffrent sub-interval. We select the corresponding node by searching on the key values of the node.
+	function: search(k)
+		return tree_search(k, root);
+	
+	function: tree_search(k, node)
+		if node is a leaf then 
+			return node;
+		switch k do 
+			case k < k_0
+				return tree_search(k, p_0);
+			case k_i <= k < k_{i+1}
+				return tree_search(k, p_{i+1});
+			case k_d <= k
+				return tree_search(k, p_{d+1});
+	
+This pseudocode assumes that no duplicates are allowed.
+
+Insertion
+Perform a search to determine what bucket the new record should go into.
+=> If the bucket is not full (at most b-1 entries after the insertion), add the record.
+=> Otherwise, split the bucket.
+	==> Allocate new leaf and move half the bucket's elements to the new bucket.
+	==> Insert the new leaf's smallest key and address into the parent.
+	==> If the parent is full, split it too.
+		===> Add the middle key to the parent node.
+	==> Repeat until a parent is found the that need not split.
+=> If the root splits, create a new root which has one key and two pointers.
+
+Deletion
+=> Start at root, find leaf L where entry belongs.
+=> Remove the entry.
+	==> If L is at least half-full, done!
+	==> If L has fewer entries than it should.
+		===> Try to re-distribute, borrowing from sibling (adjacent node with same parent as L).
+		===> If re-distribution fails, merge L and sibling.
+=> If merge occurred, must delete entry (pointing to L or sibling) from parent of L.
+=> Merge could propagate to root, decreasing height.
+
+Characteristics
+===========================
+For a b-order B+ tree with h levels of index:
+=> The maximum number of records stored is n_max = b^h - b^(h-1)
+=> The minimum number of records stored is n_min = 2*ceil(b/2)^(h-1)
+=> The minimum number of keys is n_kmin = 2*ceil(b/2)^h - 1
+=> The maximum number of keys is n_kmax = n^h
+=> The space required to store the tree is O(n)
+=> Inserting a record requires O(log_b(n)) operations.
+=> Finding a record requires O(log_b(n) operations.
+=> Removing a (previously located) record requires O(log_b(n) operations.
+=> Performing a range query with k elements occurring within the range requires O(log_b(n) + k) operations.
+=> Performing a pagination query with page size s and page number p requires O(p*s) operations.
+	
