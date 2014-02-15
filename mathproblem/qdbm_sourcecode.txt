@@ -1,0 +1,89 @@
+
+
+API说明文档
+=================
+
+cabin.h  curia.h  depot.h  hovel.h  myconf.h  odeum.h  relic.h  villa.h  vista.h
+
+depot.h 最原始C API Depot: Basic API
+curia.h 多个directory下数据库管理 Curia is the extended API of QDBM. It provides routines for managing multiple database files in a directory.
+
+relic.h 提供和NDBM兼容的接口 Relic: NDBM-compatible API
+hovel.h 提供和GDBM兼容的接口 Hovel: GDBM-compatible API
+
+cabin.h 是API其它工具库，提供申请内存、排序、扩展数据、解析MIME/CSV/XML及不同特征类型的编码解码
+
+villa.h Villa: Advanced API (Villa is the advanced API of QDBM. It provides routines for managing a database file of B+ tree)
+vista.h (Vista: Extended Advanced API (Vista is the extended API of Villa. To compensate for the defect that Villa can not handle a file whose size is more than 2GB, Vista does not use Depot but Curia for handling its internal database. While Vista provides data structure and operations of B+ tree as with Villa, its database is realized as a directory.)
+
+odeum.h Odeum: Inverted API (Odeum is implemented, based on Curia, Cabin, and Villa. Odeum creates a database with a directory name.)
+
+File format
+======================
+
+QA
+======================
+
+COPYING
+======================
+
+
+源码依赖关系
+======================
+depot.h ==> 
+curia.h ==> depot.h
+
+relic.h ==> depot.h
+hovel.h ==> depot.h curia.h
+
+cabin.h ==> 
+
+villa.h ==> depot.h cabin.h
+vista.h ==> depot.h cabin.h curia.h villa.h
+odeum.h ==> depot.h cabin.h curia.h villa.h
+
+源码剖析路径建议：
+了解zlib/bzip/lzo/iconv/被用到的接口
+ ==> myconf ==> depot ==> cabin ==> villa ==> ?
+                     \==> curia ==========/
+
+
+正在看myconf
+================
+
+向上读到260行....
+
+mmap()/munmap()/msync()/mflush() mflush() [我也不知道这货干什么用的]
+
+struct tms/
+times()/sysconf()
+
+struct flock/
+fcntl()/ftruncate()改变文件大小/mkdir()/rename()
+struct dirent/struct DIR
+opendir()/closedir()/readdir()
+
+
+_qdbm_vmemavail(size): 如果超过内存余量MemFree(B) + SwapFree(B)，就返回FALSE
+
+
+几种压缩相关方法
+zlib --> deflateInit2()/deflateEnd() ==> _qdbm_deflate_impl()
+zlib --> inflateInit2()/inflateEnd() ==> _qdbm_inflate_impl()
+zlib --> crc32() ==> _qdbm_getcrc_impl()
+LZO --> lzo_init()/lzo1x_1_compress() ==> _qdbm_lzoencode()
+LZO --> lzo_init()/lzo1x_decompress_safe() ==> _qdbm_lzodecode()
+bzip2 --> BZ2_bzCompressInit()/BZ2_bzCompress()/BZ2_bzCompressEnd() ==> _qdbm_bzencode()
+bzip2 --> BZ2_bzDecompressInit()/BZ2_bzDecompress()/BZ2_bzDecompressEnd() ==> _qdbm_bzdecode()
+iconv --> iconv_open()/iconv()/iconv_close() ==> _qdbm_iconv()
+iconv --> iconv_open()/iconv()/iconv_close() ==> _qdbm_encmiss() ==> _qdbm_encname()
+
+
+
+
+
+
+
+
+
+
