@@ -31,11 +31,11 @@
 
 #define BZIPBUFSIZ     8192
 
-void my_bzcompress(char* input, int size, char* ouput, int* output_n) {
+void my_bzcompress(char* input, int size, char* output, int* output_n) {
 	bz_stream strm = { .bzalloc = NULL, .bzfree = NULL, .opaque = NULL };
 	BZ2_bzCompressInit(&strm, 9, 0, 30);
 	strm.next_in = input; strm.avail_in = size;
-	strm.next_out = malloc(BZIPBUFSIZ); strm.avail_out = BZIPBUFSIZ;
+	strm.next_out = output; strm.avail_out = BZIPBUFSIZ;
 	BZ2_bzCompress(&strm, BZ_FINISH);
 	BZ2_bzCompressEnd(&strm);
 	*output_n = strm.avail_out;
@@ -45,9 +45,9 @@ void my_bzdecompress(char* input, int size, char* output, int* output_n) {
 	bz_stream strm = { .bzalloc = NULL, .bzfree = NULL, .opaque = NULL };
 	BZ2_bzDecompressInit(&strm, 0, 0);
 	strm.next_in = input; strm.avail_in = size;
-	strm.next_out = malloc(BZIPBUFSIZ); strm.avail_out = BZIPBUFSIZ;
+	strm.next_out = output; strm.avail_out = BZIPBUFSIZ;
+	BZ2_bzDecompress(&strm);
 	BZ2_bzDecompressEnd(&strm);
-	BZ2_bzCompress(&strm, BZ_FINISH);
 	*output_n = strm.avail_out;
 }
 
@@ -56,7 +56,9 @@ int main(int argc, const char *argv[])
 	char* s = "This is a test text which will compress use bzip2.";
 	int size = strlen(s), pivot_size = 0, result_size = 0;
 	char* pivot = (char*) malloc(BZIPBUFSIZ);
+	memset(pivot, 0, BZIPBUFSIZ);
 	char* result = (char*) malloc(BZIPBUFSIZ);
+	memset(result, 0, BZIPBUFSIZ);
 	my_bzcompress(s, size, pivot, &pivot_size);
 	my_bzdecompress(pivot, pivot_size, result, &result_size);
 	printf("[riginal]: [%s]\n", s);
