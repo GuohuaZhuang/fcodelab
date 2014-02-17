@@ -1,0 +1,255 @@
+[译]bzip2的low-level接口使用
+
+什么是bzip2？
+======================
+bzip2是一个免费使用，无专利，优质的数据压缩库，它一般能达到10%-15%文件压缩率的最好水平(PPM系列统计压缩)，但同时却能达到压缩速度提高2倍，解压速度提高6倍。
+目前的版本是1.0.6, released 20 Set 2010.
+版本1.0.6消除了潜在的安全漏洞CVE-2010-0405，所以建议所有的用户立即升级。
+
+为什么我要使用它？
+======================
+> 因为它压缩得很好，它能把很多东西打包起来，用于分发CD，备份磁带，U盘等等，并且可以减少你的客户在网络上的下载时间，它虽然不是这个世界上最快的压缩工具，但已经快到好用了。
+> 因为它是开源的(BSD类的许可)，且据我所知，是无专利的，所以你可以任意使用它，当然，源码也是发布的一部分。
+> 因为它支持有限恢复媒体数据错误。如果你想试图从备份的磁带或磁盘中恢复数据，并且这些数据包含了一些错误，bzip2有可能仍然解压出那些完好的文件部分。
+> 因为你已经知道怎么使用它，bzip2的命令行和GNU Gzip类似，所以如果你知道怎么使用gzip，那你也会使用bzip2的。
+> 因为它非常轻便，它能运行于任何有ANSI C编译器的32位或64位机器。这次编译发布应该在Unix和Win32系统上未做修改，早期版本还可以轻易被移植到很多怪异奇妙的系统上面。
+
+该代码被作为一个编程库提供接口使用，bzip2程序本身可作为库的客户程序，你可以调用该库用于自己的程序，去直接读取或者写入.bz2文件，甚至在内存中使用bzip2压缩算法来压缩数据。
+
+说明
+==================
+bzip2采用Burrows-Wheeler块排列文本压缩算法和哈夫曼编码，压缩水平一般比常规的LZ77/基于LZ78的压缩机制更好，并且接近PPM系列的统计压缩性能。bzip2是建立在能灵活处理数据成bzip2格式的libbzip2库上面。
+
+安装
+==================
+Debian系列环境下安装开发包
+	$ sudo apt-get install libbz2-dev
+Red Hat系列环境下安装开发包
+	$ sudo yum install bzip2-devel
+SUSE Linux系列环境下安装开发包
+	$ zypper install libbz2-devel
+从源码安装
+	$ wget http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz
+	$ tar zxf bzip2-1.0.6.tar.gz
+	$ cd bzip2-1.0.6
+	$ make
+	$ sudo make install
+验证安装（编译时指定-lbz2是必需的）
+	// test.c
+	#include <bzlib.h>
+	int main(void) {
+	  bz_stream strm = { .bzalloc = NULL, .bzfree = NULL, .opaque = NULL };
+	  BZ2_bzCompressInit(&strm, 9, 0, 0);
+	  BZ2_bzCompressEnd(&strm);
+	  return 0;
+	}
+
+Low-level总结
+这部分接口提供在内存中的数据压缩和解压，没有规定去处理文件、流或者其它任何IO设备，是直接处理内存到内存的操作。实际上这部分库可以在无引入stdio.h的头文件中编译，这样就可以对嵌入式应用非常有用。
+Low-level部分的接口没有全局变量，所以是线程安全的。
+6个函数组成了Low-level的接口：BZ2_bzCompressInit, BZ2_bzCompress和BZ2_bzCompressEnd用于压缩，对应的BZ2_bzDecompressInit, BZ2_bzDecompress和BZ2_bzDecompressEnd用于解压缩。*Init的函数负责解压缩用到的申请内存空间和一些其它初始化操作，同时*End函数关闭操作并释放内存。
+实际处理工作的是BZ2_bzCompress和BZ2_bzDecompress。它们压缩或者解压来自用户支持的输入缓存数据并且输出同样用户支持的输出缓存，这些缓存可以是任意大小任意类型的数据，因为可以重复不断调用它们来处理，这是一个灵活的机制，可以允许消费者模式或者生产者模式运行，或者两者都有。
+
+3.3 Low-level接口（原文翻译）
+============================
+
+3.3.1 BZ2_bzCompressInit
+
+	typedef struct {
+	  char *next_in;
+	  unsigned int avail_in;
+	  unsigned int total_in_lo32;
+	  unsigned int total_in_hi32;
+	
+	  char *next_out;
+	  unsigned int avail_out;
+	  unsigned int total_out_lo32;
+	  unsigned int total_out_hi32;
+	
+	  void *state;
+	
+	  void *(*bzalloc)(void *,int,int);
+	  void (*bzfree)(void *,void *);
+	  void *opaque;
+	} bz_stream;
+	
+	int BZ2_bzCompressInit ( bz_stream *strm, 
+	                         int blockSize100k, 
+	                         int verbosity,
+	                         int workFactor );
+
+准备压缩，bz_stream结构包含了有关数据压缩活动的所有数据。一个bz_stream结构在调用该方法前需要被申请和初始化。bz_stream的字段包含了所有用户可见的数据，state是一个指向压缩里用到的私有数据结构的指针。
+自定义的内存申请也是支持的，通过字段bzalloc, bzfree和opaque设置成NULL，这样库里面就会使用标准的malloc/free函数。
+在调用BZ2_bzCompressInit之前，字段bzalloc, bzfree和opaque应该被适当填写，如刚才所描述的。调用返回后，内部的state就会被申请好内存和初始化，total_in_lo32, total_in_hi32, total_out_lo32和total_out_hi32就会被设置为零。这四个字段是用来分别通知调用者数据处理进出的总量，你不应该尝试改变它们。从1.0版本开始，64位计数的方式就被保留下来，即使在32位平台上，使用_hi32字段去存储高32位，所以处理进的数据总量是(total_in_hi32 << 32) + total_in_lo32。
+参数blockSize100k指压缩中的块大小，它需要是一个介于1到9的整数值，而实际上的块大小是100000乘于这个值，9给出最好的压缩率但耗用了最多的内存。
+参数verbosity需要被设置成介于0到4的值，0表示安静处理，且数字越大表示打印出的详细控制或调试信息越多。如果编译库的时候加入了-DBZ_NO_STDIO，则对于任何verbosity参数的设置都不会有任何输出出现。
+参数workFactor控制当遇到输入的数据是重复性很高时压缩阶段的行为，如果压缩时遇到重复性数据，库会从标准排序算法切换到备用算法，备用算法比标准算法也许要慢，但无论输入的数据怎么糟糕，使用备用算法都通用比较合理。
+workFactor比较小的话会减少在切换到备用算法之前标准算法的处理。你必须小心设置这个参数，如果太小的话，很多输入数据将会被备用算法处理而导致压缩过慢，如果太大的话平均最差处理情况的压缩时间将会很大，通常在很大范围内默认给定30是一个合理的值。允许值的范围从0到250，0是一个特殊情况，等效于使用的默认值30。请注意无论是否使用备用压缩算法，压缩产生的输出是相同。
+另外要注意的是这个参数可能在将来版本的库中消失，因为从原则上来说可能会以一种更好的自动选择算法去使用，这样的机制就会导致这个参数过时。
+可能的返回值：
+	BZ_CONFIG_ERROR
+		如果丢失编译库
+	BZ_PARAM_ERROR
+		如果strm是NULL
+		或者blockSize < 1 或 blockSize > 9
+		或者verbosity <0 或 verbosity > 4
+		或者workFactor < 0 或 workFactor > 250
+	BZ_MEM_ERROR
+		如果没有足够内存可用
+	BZ_OK
+		其它
+
+下一步操作：
+	BZ2_bzCompress
+		如果返回BZ_OK。
+		而如果返回错误，则没有特别的操作。
+
+3.3.2 BZ2_bzCompress
+	int BZ2_bzCompress(bz_stream *strm, int action);
+
+在向库提供输入和输出后，调用者管理输入输出缓存，然后调用BZ2_bzCompress在它们之间去转换数据。
+在调用BZ2_bzCompress之前，next_in需要被指向要压缩的原始数据，avail_in需要指定要读取处理的原始数据字节大小，BZ2_bzCompress处理会更新next_in，avail_in和total_in去反映它已经读取的字节数。
+类似地，每次调用BZ2_bzCompress之前，next_out需要指向将要输出压缩数据的缓存，avail_out指定缓存的大小，BZ2_bzCompress会更新next_out, avail_out和total_out去反映它的输出字节大小。
+你可以在调用BZ2_bzCompress时提供或者删除任意大小的数据，但限制可接收的最小一次调用至少需要一字节，虽然这样会导致很低效率，但你也必须保证在每次调用时输出空间至少有1字节是可用的。
+
+第二个调用BZ2_bzCompress要注意的是改变压缩流的模式。
+从概念上讲，一个压缩流可以是四种状态中的一种：IDLE、RUNNING、FLUSHING和FINISHING，在初始化BZ2_bzCompressInit和结束BZ2_bzCompressEnd之后，一个压缩流的状态是IDLE。
+通过初始化BZ2_bzCompressInit调用，压缩流处理RUNNING状态，后继调用BZ2_bzCompress需要通过BZ_RUN请求处理，其它处理都是非法并会导致BZ_SEQUENCE_ERROR出错的。
+在某些时候，会提供所有的数据并要调用程序直接完成压缩，实际上，让库来处理任何数据里都可能会有内部缓存，在这种情况下，BZ2_bzCompress将不再尝试读取next_in的数据，但它会希望将数据写入next_in。因为由用户提供的输出缓存可能是任意小的，这样就导致一次调用BZ2_bzCompress不会完成所有数据的处理。
+相反，调用程序会传递BZ_FINISH作为调用BZ2_bzCompress处理结束后，这样压缩流的状态就会变成FINISHING，任何内部保存的输入像next_in[0...avail_in-1]都会被压缩完毕并转换到输出缓存。为了达到这种情况，BZ2_bzCompress需要被重复调用多次直到所有输出缓存都被耗用，这种情况下，BZ2_bzCompress会返回BZ_STREAM_END，并且把压缩流的状态设回IDLE，然后就应该调用BZ2_bzCompressEnd了。
+为什么确保调用程序不真实，压缩库地记住avail_in在有BZ_FINISH处理后第一次调用BZ2_bzCompress的时候，该值与该avail_in超过后续就会让BZ2_bzCompress比较，该库就会检测到BZ_SEQUENCE_ERROR，这表明是一个予以避免的编程情况。
+不像完成状态那样，调用程序可能会让BZ2_bzCompress去获取所有输入数据并压缩它，并且结束当前压缩块，这样可能对错误控制非常有用，BZ_FLUSH的机制类似于完成状态，当调用BZ2_bzCompress在BZ_FLUSH状态时，会删除输出的数据，然后直到返回BZ_RUN，BZ2_bzCompress会在flush开始时就检测任何试图提供更多输入数据的操作。
+而一旦flush完成后，压缩流就返回到正常的RUNNING状态。
+这一切听起来很复杂，但其实不是的，这里给出一个表，该表显示了每个状态下会有哪些处理操作，以及每个操作处理后会处于什么状态，的返回非出错值是什么。但要注意你不能明确任何时候压缩流是处理什么状态的，但也不需要，它可以从BZ2_bzCompress返回的值来推断。
+
+	IDLE/any
+		非法的，IDLE状态只会出现在BZ2_bzCompressInit之前和BZ2_bzCompressEnd之后。
+		返回值：BZ_SEQUENCE_ERROR
+	
+	RUNNING/BZ_RUN
+		尽可能地压缩next_in数据输出到next_out。
+		下个状态：RUNNING
+		返回值：BZ_RUN_OK
+	
+	RUNNING/BZ_FLUSH
+		保存记住当前的next_in，并尽可能地压缩next_in数据输出到next_out，且不再接收任何输入。
+		下个状态：FLUSHING
+		返回值：BZ_FLUSH_OK
+	
+	RUNNING/BZ_FINISH
+		保存记住当前的next_in，并尽可能地压缩next_in数据输出到next_out，且不再接收任何输入。
+		下个状态：FLUSHING
+		返回值：BZ_FLUSH_OK
+	
+	FLUSHING/BZ_FLUSH
+		尽可能地压缩next_in数据输出到next_out，且不再接收任何输入。
+		如果所有存在的输入都已经处理完且压缩到输出的内存也删除完，则
+			下个状态：RUNNING；返回值：BZ_RUN_OK
+		否则
+			下个状态：FLUSHING；返回值：BZ_FLUSH_OK
+	
+	FLUSHING/other
+		非法的。
+		返回值：BZ_SEQUENCE_ERROR
+	
+	FINISHING/BZ_FINISH
+		尽可能地压缩next_in数据输出到next_out，且不再接收任何输入。
+		如果所有存在的输入都已经处理完且压缩到输出的内存也删除完，则
+			下个状态：IDLE；返回值：BZ_STREAM_END
+		否则
+			下个状态：FINISHING；返回值：BZ_FINISHING
+	
+	FINISHING/other
+		非法的。
+		返回值：BZ_SEQUENCE_ERROR
+	
+这样还是看起来很复杂？好吧，整个通用的压缩处理过程如下：
+	1. 从BZ2_bzCompressInit开始；
+	2. 通过输入数据并0次或多次以action为BZ_RUN去调用BZ2_bzCompress得到输出数据；
+	3. 完成啦，重复多次以action为BZ_FINISH去调用BZ2_bzCompress而复制出压缩输出，直到BZ_STREAM_END返回为止。
+	4. 调用BZ2_bzCompressEnd关闭然后回家吧，骚娘。
+
+如果想要一次性马上压缩完输入给定的数据，可能跳过调用BZ2_bzCompress(..., BZ_RUN)而直接调用BZ2_bzCompress(..., BZ_FINISH)。
+所有内存需要都是由BZ2_bzCompressInit来申请的，压缩库可以接受任意数据，很明显地嘛，所以你应该不会因为调用BZ2_bzCompress而出错，如果真出错了，那肯定是返回BZ_SEQUENCE_ERROR了，说明你自己的程序有BUG哈。
+当然还有其它可能的返回值：
+	BZ_PARAM_ERROR
+		如果strm是NULL，或者strm->s是NULL
+
+
+3.3.3 BZ2_bzCompressEnd
+	int BZ2_bzCompressEnd ( bz_stream *strm );
+释放所有压缩流相关的内存。
+可能的返回值：
+	BZ_PARAM_ERROR  如果strm是NULL，或者strm->s是NULL
+	BZ_OK           其它
+
+
+3.3.4 BZ2_bzDecompressInit
+	int BZ2_bzDecompressInit ( bz_stream *strm, int verbosity, int small );
+对于解压的准备函数，和BZ2_bzCompressInit类似，调用之前bz_stream记录需要被申请且初始化，如果有自定义内存管理的话字段bzalloc，bzfree和opaque应该被设置，如果没有的话就全部设置成NULL，以让内部使用malloc/free处理函数。函数返回后，内部state就会被初始化，且total_in和total_out会被置成0。
+对于参数verbosity，详见BZ2_bzCompressInit。
+如果small非零，解压库会使用非常规的解压算法，它可以使用更小的内存但会导致比较慢的解压速度，粗略地讲，大概一半原来的速度，但最大内存使用量只有2300KB。
+注意解压流对内存的使用量是到流的头部被读入后确定的，所以及时BZ2_bzDecompressInit执行成功，后继调用BZ2_Decompress也可能失败而返回BZ_MEM_ERROR。
+可能的返回值：
+	BZ_CONFIG_ERROR
+		如果丢失编译库
+	BZ_PARAM_ERROR
+		if ( small != 0 && small != 1 )
+		or (verbosity < 0 || verbosity > 4)
+	BZ_MEM_ERROR
+		如果没有足够的内存可用
+
+下一步允许的处理：
+	BZ2_bzDecompress
+		如果返回BZ_OK
+		而如果返回错误则没有特别的下一步处理
+
+
+3.3.5 BZ2_bzDecompress
+	int BZ2_bzDecompress ( bz_stream *strm );
+在给库提供好输入和输出缓存空间后，就可以调用BZ2_bzDecompress去转换它们。
+在调用BZ2_bzDecompress之前，next_in需要指定要解压的数据，且avail_in应该指定需要读取这些数据的大小，BZ2_bzDecompress会更新next_in, avail_in和total_in去反映读取处理的字节大小。
+类似地，next_out需要指定需要解压数据结果存放的缓存空间，且avail_out指定输出可用缓存空间大小，BZ2_bzDecompress会更新next_out，avail_out和total_out去反映输出的字节大小。
+你也许会在调用BZ2_bzDecompress时提供或者删除任意大小的数据，但限制可接收的提供数据大小或删除数据至少1字节，虽然这样会是很糟糕的效率，你同样也要保证每次调用至少1字节的输出空间可用。
+使用BZ2_bzDecompress和BZ2_bzCompress类似。
+你需要提供如上所述的输入和输出空间，然后重复调用BZ2_bzDecompress直到返回BZ_STREAM_END为止。出现BZ_STREAM_END表明BZ2_bzDecompress检测到逻辑结束了解压流处理，BZ2_bzDecompress不出在没有输出完数据到输出缓存中就产生BZ_STREAM_END的，所以一旦BZ_STREAM_END出现了，保证你可以使用解压输出数据了，且BZ2_bzDecompressEnd可以安全地调用了。
+如果返回出错，你也要应该调用BZ2_bzDecompressEnd去清空释放内存。
+可能的返回值：
+	BZ_PARAM_ERROR
+		如果strm为NULL或strm->s为NULL
+		或者strm->avail_out < 1
+	BZ_DATA_ERROR
+		如果解压流检测到数据完整性错误
+	BZ_DATA_ERROR_MAGIC
+		如果压缩数据流没有以正确合法的字节开始
+	BZ_MEM_ERROR
+		如果没有足够可用的内存
+	BZ_STREAM_END
+		如果检测到逻辑上数据流的结束且所有输出数据被使用完，比如s->avail_out>0
+	BZ_OK
+		其它
+
+下一步操作：
+	BZ2_bzDecompress
+	  如果返回BZ_OK
+	BZ2_bzDecompressEnd
+	  其它
+
+
+3.3.6 BZ2_bzDecompressEnd
+	int BZ2_bzDecompressEnd ( bz_stream *strm );
+释放所有解压流使用的相关内存。
+可能的返回值：
+	BZ_PARAM_ERROR
+		如果strm为NULL或strm->s为NULL
+	BZ_OK
+		其它
+下一步操作：
+	没了。
+
+
+参考原文：
+	http://www.bzip.org/index.html
+	http://www.bzip.org/1.0.3/html/low-level.html
+	http://s-yata.jp/docs/libbzip2/
+
