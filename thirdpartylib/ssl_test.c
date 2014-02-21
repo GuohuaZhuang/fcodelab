@@ -16,8 +16,8 @@
 * 
 */
 /**
-* @file nossl_test.c
-* @brief use libssl to implement nossl connection.
+* @file ssl_test.c
+* @brief use libssl to implement ssl in https connection.
 * reference:
 * 	http://www.ibm.com/developerworks/linux/library/l-openssl/index.html
 * @author firstboy0513
@@ -32,40 +32,59 @@
 #include <string.h>
 
 /**
-* @brief test case for nossl.
-* The START_BIO_READ goto label is use for BIO_should_retry function.
+* @brief test case for ssl.
 *
-* @param host_and_port host_and_port string.
+* @param host_and_port host_and_port string, end with https.
 * @param request request string.
 */
-void testcase_nossl(char* host_and_port, const char* request) {
+void testcase_ssl(char* host_and_port, const char* request) {
 	BIO* bio;
 	ERR_load_BIO_strings();
 	SSL_load_error_strings();
 	OpenSSL_add_all_algorithms();
+	SSL_library_init();
 
-	if (NULL == (bio = BIO_new_connect(host_and_port))) {
-		printf("BIO is null!\n"); return;
+	SSL_CTX* ctx = SSL_CTX_new(SSLv23_client_method());
+	SSL* ssl;
+	if (!SSL_CTX_load_verify_locations(ctx, "TrustStore.pem", NULL)) {
+		printf("SSL_LTX_load_verify_locations failed!\n");
+		ERR_print_errors_fp(stderr);
+		SSL_CTX_free(ctx);
+		return;
 	}
+	bio = BIO_new_ssl_connect(ctx);
+	BIO_get_ssl(bio, &ssl);
+	SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+	BIO_set_conn_hostname(bio, host_and_port);
 	if (BIO_do_connect(bio) <= 0) {
-		ERR_print_errors_fp(stderr); BIO_free_all(bio); return;
+		printf("BIO_do_connect failed!\n");
+		ERR_print_errors_fp(stderr);
+		BIO_free_all(bio);
+		SSL_CTX_free(ctx);
+		return;
+	}
+	if (SSL_get_verify_result(ssl) != X509_V_OK) {
+		printf("SSL_get_verify_result error with %ld.\n", 
+			SSL_get_verify_result(ssl));
+		ERR_print_errors_fp(stderr);
+		BIO_free_all(bio);
+		SSL_CTX_free(ctx);
+		return;
 	}
 	BIO_write(bio, request, strlen(request));
 	int p = 0; char r[1024] = {0};
-START_BIO_READ:
 	while ((p = BIO_read(bio, r, 1023)) > 0) {
 		r[p] = '\0'; printf("%s", r);
 	}
-	if (p < 0 && BIO_should_retry(bio)) {
-		goto START_BIO_READ;
-	}
 	BIO_free_all(bio);
+	SSL_CTX_free(ctx);
 }
 
 int main(int argc, const char *argv[])
 {
-	const char* request = "GET / HTTP/1.1\x0D\x0AHost: www.baidu.com\x0D\x0A"
-	"Connection: Close\x0D\x0A\x0D\x0A";
-	testcase_nossl("www.baidu.com:80", request);
+	#define HOST "www.verisign.com"
+	const char* request = "GET / HTTP/1.1\x0D\x0AHost: "HOST"\x0D\x0A"
+		"Connection: Close\x0D\x0A\x0D\x0A";
+	testcase_ssl(HOST":https", request);
 	return 0;
 }
