@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 void testcase_mmap_shared() {
 	const char* s1 = "the first string";
@@ -44,9 +46,19 @@ void testcase_mmap_shared() {
 	sleep(2);
 }
 
+void testcase_mmap_file() {
+	int fd = open("txt", O_RDONLY);
+	struct stat st;
+	fstat(fd, &st);
+	char* filemap = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	printf("filemap: %s\n", filemap);
+	munmap(filemap, st.st_size);
+}
+
 int main(int argc, const char *argv[])
 {
 	testcase_mmap_shared();
+	testcase_mmap_file();
 
 	return 0;
 }
