@@ -53,7 +53,7 @@ int main (int argc, char* argv[])
 	   thread-specific data. Use close_thread_log to clean up the file
 	   pointers. */
 	pthread_key_create (&thread_log_key, close_thread_log);
-	pthread_key_create (&thread_msg_key, NULL);
+	pthread_key_create (&thread_msg_key, free_thread_msg);
 	/* Create threads to do the work. */
 	for (i = 0; i < 5; ++i)
 		pthread_create (&(threads[i]), NULL, thread_function, NULL);
