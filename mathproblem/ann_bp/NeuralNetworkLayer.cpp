@@ -1,5 +1,9 @@
 
-#include "ann_bp.hpp"
+#include "NeuralNetworkLayer.hpp"
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
 
 NeuralNetworkLayer::NeuralNetworkLayer() {
 	ParentLayer = NULL;
@@ -9,7 +13,7 @@ NeuralNetworkLayer::NeuralNetworkLayer() {
 	MomentumFactor = 0.9;
 }
 
-NeuralNetworkLayer::Initialize(int NumNodes, 
+void NeuralNetworkLayer::Initialize(int NumNodes, 
 	NeuralNetworkLayer* parent, NeuralNetworkLayer* child) {
 	int i = 0, j = 0;
 	// prepare memorys
@@ -38,7 +42,7 @@ NeuralNetworkLayer::Initialize(int NumNodes,
 		NeuronValues[i] = 0; DesiredValues[i] = 0; Errors[i] = 0;
 		if (NULL != ChildLayer) {
 			for (j = 0; j < NumberOfChildNodes; j ++) {
-				Weightsp[i][j] = 0; WeightChanges[i][j] = 0;
+				Weights[i][j] = 0; WeightChanges[i][j] = 0;
 			}
 		}
 	}
@@ -82,7 +86,7 @@ void NeuralNetworkLayer::RandomizeWeights(void) {
 		number = (abs(rand())%(max-min-1))+min;
 		if (number > max) { number = max; }
 		if (number < min) { number = min; }
-		BiasWeights[i][j] = number / 100.0f - 1;
+		BiasWeights[j] = number / 100.0f - 1;
 	}
 }
 

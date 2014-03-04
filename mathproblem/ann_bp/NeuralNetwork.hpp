@@ -1,4 +1,6 @@
 
+#include "NeuralNetworkLayer.hpp"
+
 class NeuralNetwork
 {
 public:
