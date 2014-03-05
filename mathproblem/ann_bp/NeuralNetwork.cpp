@@ -107,7 +107,7 @@ void NeuralNetwork::SetMomentum(bool useMomentum, double factor) {
 	OutputLayer.MomentumFactor = factor;
 }
 
-void NeuralNetwork::DumpData(char* filename) {
+void NeuralNetwork::DumpData(const char* filename) {
 	int i = 0, j = 0;
 	FILE* f = NULL;
 	f = fopen(filename, "w");

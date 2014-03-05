@@ -20,6 +20,6 @@ public:
 	void SetLearningRate(double rate);
 	void SetLinearOutput(bool useLinear);
 	void SetMomentum(bool useMomentum, double factor);
-	void DumpData(char* filename);
+	void DumpData(const char* filename);
 };
 
