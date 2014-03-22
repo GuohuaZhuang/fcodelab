@@ -26,7 +26,7 @@ char* strstr_kmp(const char* haystack, const char* needle) {
 		}
 		i ++, j ++;
 	}
-	if (j = nlen) return (char*)(haystack + i - nlen);
+	if (j == nlen) { return (char*)(haystack + i - nlen); }
 	return NULL;
 }
 
