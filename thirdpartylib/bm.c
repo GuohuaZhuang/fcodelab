@@ -76,7 +76,7 @@ void preBmGs(const char* x, int m, int* bmGs, int XSIZE) {
     suffixes(x, m, suffix, XSIZE);
     for (i = 0; i < XSIZE; i ++) { bmGs[i] = m; }   // init consider no suffix
     for (i = m-2; i >= 0; i --) {                   // a head prefix as suffix
-        if (bmGs[i] == i+1) {
+        if (suffix[i] == i+1) {
             for (j = m-1-i; j >= 0; j --) { bmGs[j] = (m-1) - i; }
         }
     }
