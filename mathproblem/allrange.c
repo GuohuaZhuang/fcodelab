@@ -120,7 +120,7 @@ int has_next_permutation(int* array, int size) {
 		reverseleft = changeindex; changeindex --;
 		if (array[changeindex] < array[reverseleft]) {
 			reverseright = size-1;
-			while (array[changeindex] > array[reverseright]) { reverseright--; }
+			while (array[changeindex] >= array[reverseright]) { reverseright--; }
 			SWAP(array[changeindex], array[reverseright])
 			array_reverse(array + reverseleft, size - reverseleft);
 			return 1;
