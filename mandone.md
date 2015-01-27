@@ -83,12 +83,11 @@ mandone internal API (手动打done API)
 
     bdir: 手动打done的目录名称（从mandone_list接口上获取）
 
-    begin: 起始手动打done时间，格式如: "20150122 10:00"，可以为非5分钟、及非法时间，后台也有作判断，前台也可多做验证
+    begin: 起始手动打done时间，格式如: "20150122 10:00"，必须为5分钟目录
 
-    end  : 起始手动打done时间，格式如: "20150122 10:20"，可以为非5分钟、及非法时间，后台也有作判断，前台也可多做验证
+    end  : 起始手动打done时间，格式如: "20150122 10:20"，必须为5分钟目录
 
-    empty: 是否在hdfs目录放空标志的日志，如文本touchz空empty.log，二进制放大小为96的empty.seq，其值可以为empty、noempty、onlyempty、autoempty
-    分别表示打done时放空seq、不放empty、只放empty不打done、自动判断是否需要放emtpy，建议放最后者，但速度比较慢
+    empty: 是否在hdfs目录放空标志的日志，如文本touchz空empty.log，二进制放大小为96的empty.seq，其值可以为empty、noempty、onlyempty、autoempty分别表示打done时放空seq、不放empty、只放empty不打done、自动判断是否需要放emtpy，建议放最后者，但速度比较慢
 
 * 示例: 
 
@@ -118,9 +117,9 @@ mandone internal API (手动打done API)
 
     bdir: 手动打done的目录名称（从mandone_list接口上获取）
 
-    begin: 起始手动打done时间，格式如: "20150122 10:00"，可以为非5分钟、及非法时间，后台也有作判断，前台也可多做验证
+    begin: 起始手动打done时间，格式如: "20150122 10:00"，必须为5分钟目录
 
-    end  : 起始手动打done时间，格式如: "20150122 10:20"，可以为非5分钟、及非法时间，后台也有作判断，前台也可多做验证
+    end  : 起始手动打done时间，格式如: "20150122 10:20"，必须为5分钟目录
 
 * 示例: 
 
@@ -167,4 +166,3 @@ mandone internal API (手动打done API)
        "message":""
     }
     ```
-
