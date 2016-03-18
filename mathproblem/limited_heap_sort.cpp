@@ -166,7 +166,7 @@ class MinHeapSort {
         void radjust(int start) {
             int j = 0;
             ELE pivot = m_arr[start];
-            for (j = ((start - 1) >> 1); j > 0; j = ((j - 1) >> 1)) {
+            for (j = ((start - 1) >> 1); j >= 0; j = ((j - 1) >> 1)) {
                 if (m_arr[j] <= pivot) {
                     break;
                 }
@@ -187,8 +187,8 @@ class MinHeapSort {
                 adjust(m_size, 0);
             } else {
                 m_arr[m_size] = e;
+                radjust(m_size);
                 m_size++;
-                radjust(m_size - 1);
             }
         }
         /**
